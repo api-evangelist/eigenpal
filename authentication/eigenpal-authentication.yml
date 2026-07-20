@@ -1,0 +1,24 @@
+generated: '2026-07-19'
+method: searched
+source: openapi/eigenpal-openapi-original.json
+docs: https://docs.eigenpal.com/api-reference
+summary:
+  types:
+  - http
+  scheme: bearer-api-key
+  api_key_in:
+  - header
+  oauth2_flows: []
+schemes:
+- name: bearerAuth
+  type: http
+  scheme: bearer
+  description: 'API key issued from the dashboard under Settings → API Keys. Pass as `Authorization: Bearer <key>`.'
+  sources:
+  - openapi/eigenpal-openapi-original.json
+notes:
+  key_issuance: Dashboard → Settings → API Keys (one key maps to one tenant/organization).
+  cli_login: '`eigenpal auth login` opens a browser to create an API key and stores it in ~/.config/eigenpal/credentials.json as a named profile.'
+  identity_endpoint: 'GET /api/v1/auth/check returns the tenant, user, API key, and scope for the current key.'
+  scopes: API keys carry a scope; a 403 is returned when the key lacks the scope required by an operation (key-level scopes, not OAuth scopes).
+  self_hosted: SDKs and CLI accept a custom base URL (baseUrl / base_url / EIGENPAL server profile) to target self-hosted deployments.
