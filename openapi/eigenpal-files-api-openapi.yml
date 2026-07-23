@@ -1,0 +1,389 @@
+openapi: 3.1.0
+info:
+  title: Eigenpal Automations Files API
+  version: 1.0.0
+  description: Public REST API for inspecting automations, starting and monitoring runs, managing files, collecting human reviews, and running evaluations.
+  contact:
+    name: Eigenpal
+    url: https://eigenpal.com
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://studio.eigenpal.com
+  description: Production
+security:
+- bearerAuth: []
+tags:
+- name: Files
+  description: Upload reusable files for later run or dataset use.
+paths:
+  /api/v1/files:
+    post:
+      operationId: files.create
+      summary: Upload file
+      description: Upload a reusable file that can later be referenced by run inputs or dataset examples.
+      tags:
+      - Files
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateFileMultipartRequest'
+      responses:
+        '200':
+          description: Uploaded file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/files/{id}:
+    get:
+      operationId: files.get
+      summary: Get file metadata
+      description: Get metadata for a reusable uploaded file.
+      tags:
+      - Files
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: File id
+        required: true
+        description: File id
+      responses:
+        '200':
+          description: File metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    delete:
+      operationId: files.delete
+      summary: Delete file
+      description: Delete a reusable uploaded file. Historical run and dataset snapshots are separate artifacts.
+      tags:
+      - Files
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: File id
+        required: true
+        description: File id
+      responses:
+        '200':
+          description: File deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteFileResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/files/{id}/content:
+    get:
+      operationId: files.content.get
+      summary: Download file content
+      description: Download bytes for a reusable uploaded file.
+      tags:
+      - Files
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: File id
+        required: true
+        description: File id
+      responses:
+        '200':
+          description: File content
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+components:
+  schemas:
+    DeleteFileResponse:
+      type: object
+      properties:
+        deleted:
+          type: boolean
+      required:
+      - deleted
+      additionalProperties: false
+    CreateFileMultipartRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          description: Binary file field
+          format: binary
+      required:
+      - file
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
+    File:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        contentType:
+          anyOf:
+          - type: string
+          - type: 'null'
+        size:
+          anyOf:
+          - type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+          - type: 'null'
+        purpose:
+          anyOf:
+          - type: string
+          - type: 'null'
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+      required:
+      - id
+      - filename
+      - contentType
+      - size
+      - createdAt
+      additionalProperties: false
+    ApiErrorIssue:
+      type: object
+      properties:
+        field:
+          type: string
+          description: JSON path of the offending field, or "<root>"
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
+      required:
+      - field
+      - message
+      - code
+      - severity
+      additionalProperties: false
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'API key issued from Settings → API Keys. Pass as `Authorization: Bearer <key>`.'

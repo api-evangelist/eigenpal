@@ -1,0 +1,2100 @@
+openapi: 3.1.0
+info:
+  title: Eigenpal Automations Runs API
+  version: 1.0.0
+  description: Public REST API for inspecting automations, starting and monitoring runs, managing files, collecting human reviews, and running evaluations.
+  contact:
+    name: Eigenpal
+    url: https://eigenpal.com
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://studio.eigenpal.com
+  description: Production
+security:
+- bearerAuth: []
+tags:
+- name: Runs
+  description: Start, monitor, retry, review, and debug automation runs, including artifacts.
+paths:
+  /api/v1/runs:
+    get:
+      operationId: runs.list
+      summary: List runs
+      description: List workflow and agent runs with cursor pagination.
+      tags:
+      - Runs
+      parameters:
+      - in: query
+        name: type
+        schema:
+          type: string
+      - in: query
+        name: source
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+      - in: query
+        name: trigger
+        schema:
+          type: string
+      - in: query
+        name: triggeredBy
+        schema:
+          type: string
+      - in: query
+        name: sourceRef
+        schema:
+          type: string
+      - in: query
+        name: batchId
+        schema:
+          type: string
+      - in: query
+        name: exampleId
+        schema:
+          type: string
+      - in: query
+        name: exampleIdContains
+        schema:
+          type: string
+      - in: query
+        name: from
+        schema:
+          type: string
+      - in: query
+        name: to
+        schema:
+          type: string
+      - in: query
+        name: createdAfter
+        schema:
+          type: string
+      - in: query
+        name: createdBefore
+        schema:
+          type: string
+      - in: query
+        name: completedAfter
+        schema:
+          type: string
+      - in: query
+        name: completedBefore
+        schema:
+          type: string
+      - in: query
+        name: cursor
+        schema:
+          type: string
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - in: query
+        name: ids
+        schema:
+          type: string
+      - in: query
+        name: experiments
+        schema:
+          type: string
+      - in: query
+        name: sort
+        schema:
+          type: string
+      - in: query
+        name: order
+        schema:
+          type: string
+      - in: query
+        name: reviewStatus
+        schema:
+          type: string
+      - in: query
+        name: reviewVerdict
+        schema:
+          type: string
+      - in: query
+        name: hasReview
+        schema:
+          type: string
+      - in: query
+        name: noReview
+        schema:
+          type: string
+      - in: query
+        name: hasCorrections
+        schema:
+          type: string
+      - in: query
+        name: reviewNoteContains
+        schema:
+          type: string
+      - in: query
+        name: reviewCreatedAfter
+        schema:
+          type: string
+      - in: query
+        name: reviewCreatedBefore
+        schema:
+          type: string
+      - in: query
+        name: reviewUpdatedAfter
+        schema:
+          type: string
+      - in: query
+        name: reviewUpdatedBefore
+        schema:
+          type: string
+      - in: query
+        name: reviewClosedAfter
+        schema:
+          type: string
+      - in: query
+        name: reviewClosedBefore
+        schema:
+          type: string
+      - in: query
+        name: sinceLastClosed
+        schema:
+          type: string
+      - in: query
+        name: sampleRate
+        schema:
+          description: Keep runs whose `sampleRank` is below this threshold (0–1). Pages may return fewer than `limit` rows when filtered.
+          type: string
+        description: Keep runs whose `sampleRank` is below this threshold (0–1). Pages may return fewer than `limit` rows when filtered.
+      responses:
+        '200':
+          description: Runs page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunsListResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    post:
+      operationId: runs.start
+      summary: Start a run
+      description: Start a run. Send JSON or multipart/form-data.
+      tags:
+      - Runs
+      parameters:
+      - in: query
+        name: version
+        schema:
+          description: Release or git ref. Defaults to latest.
+          type: string
+          minLength: 1
+        description: Release or git ref. Defaults to latest.
+      - in: query
+        name: wait_for_completion
+        schema:
+          description: Seconds to wait before returning (max 600). Omit for async.
+          type: integer
+          minimum: 0
+          maximum: 600
+        description: Seconds to wait before returning (max 600). Omit for async.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunStartBody'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RunStartMultipartRequest'
+      responses:
+        '200':
+          description: Run completed while waiting — same body as GET /api/v1/runs/:id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunStartResponse'
+        '201':
+          description: Run accepted (async)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunStartResponse'
+        '202':
+          description: Wait expired with a non-terminal status — poll GET /api/v1/runs/:id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunStartResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: Trigger disabled or insufficient scope. Run start may return api_trigger_disabled when the API trigger is off, or manual_trigger_disabled for dashboard runs on API-only workflows.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}:
+    get:
+      operationId: runs.get
+      summary: Get a run
+      description: Fetch one run by id. By default this returns core metadata plus terminal output/error fields. Pass `?expand=input,usage,execution,debug` to include detailed sub-objects; `expand=execution` is also where embedded review and expected artifacts appear.
+      tags:
+      - Runs
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id
+        required: true
+        description: Run id
+      - in: query
+        name: expand
+        schema:
+          description: 'Optional sections: `input`, `usage`, `execution`, `debug`. Terminal runs always include top-level output, files, and error.'
+          type: string
+        description: 'Optional sections: `input`, `usage`, `execution`, `debug`. Terminal runs always include top-level output, files, and error.'
+      responses:
+        '200':
+          description: Run detail. Expanded sections appear only when requested.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}/artifacts:
+    get:
+      operationId: runs.artifacts.list
+      summary: List run artifacts
+      description: Returns a JSON list of downloadable artifact paths for a run. Pass `zip=1` to switch the response to a ZIP download containing output files.
+      tags:
+      - Runs
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id
+        required: true
+        description: Run id
+      - in: query
+        name: zip
+        schema:
+          description: When `1`, download output files as a ZIP instead of listing paths. Does not include trace, scores, or input — use `GET /runs/{id}/scores` and `GET /runs/{id}/trace` for those.
+          type: string
+          enum:
+          - '1'
+        description: When `1`, download output files as a ZIP instead of listing paths. Does not include trace, scores, or input — use `GET /runs/{id}/scores` and `GET /runs/{id}/trace` for those.
+      - in: query
+        name: bundle
+        schema:
+          description: With `zip=1`, use `review` to download a ZIP with `output/` and `expected/` folders (corrected review artifacts).
+          type: string
+          enum:
+          - review
+        description: With `zip=1`, use `review` to download a ZIP with `output/` and `expected/` folders (corrected review artifacts).
+      - in: query
+        name: token
+        schema:
+          description: Signed email download token (zip only; no Bearer required).
+          type: string
+        description: Signed email download token (zip only; no Bearer required).
+      responses:
+        '200':
+          description: JSON artifact list, or ZIP bytes when `zip=1`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunArtifactsResponse'
+            application/octet-stream:
+              schema:
+                type: string
+                description: ZIP archive
+                format: binary
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}/artifacts/{path}:
+    get:
+      operationId: runs.artifacts.get
+      summary: Download run artifact
+      description: Download one artifact by path.
+      tags:
+      - Runs
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: path
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: Run artifact
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}/cancel:
+    post:
+      operationId: runs.cancel
+      summary: Cancel run
+      description: Cancel a queued run or request cancellation of an in-flight run.
+      tags:
+      - Runs
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: Cancellation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunCancelResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}/events:
+    get:
+      operationId: runs.events.list
+      summary: List run events
+      description: List a stable chronological lifecycle timeline for a run.
+      tags:
+      - Runs
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id
+        required: true
+        description: Run id
+      responses:
+        '200':
+          description: Run events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunEventsResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}/rerun:
+    post:
+      operationId: runs.rerun
+      summary: Retry run
+      description: Start a new run using the source run input. By default the retry uses the latest automation version; pass `version=original` to pin the same source version as the original run.
+      tags:
+      - Runs
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Source run id to retry.
+        required: true
+        description: Source run id to retry.
+      - in: query
+        name: version
+        schema:
+          description: Version for the new run. `original` pins the source run. Defaults to latest.
+          type: string
+        description: Version for the new run. `original` pins the source run. Defaults to latest.
+      - in: query
+        name: wait_for_completion
+        schema:
+          description: Seconds to wait before returning (max 600). Omit for async.
+          type: integer
+          minimum: 0
+          maximum: 600
+        description: Seconds to wait before returning (max 600). Omit for async.
+      responses:
+        '200':
+          description: Rerun completed while waiting
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunRerunResponse'
+        '201':
+          description: Rerun accepted (async)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunRerunResponse'
+        '202':
+          description: Wait expired with a non-terminal status — poll GET /api/v1/runs/:id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunRerunResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}/steps:
+    get:
+      operationId: runs.steps.list
+      summary: List run steps
+      description: List workflow steps or an agent-compatible execution step summary for a run.
+      tags:
+      - Runs
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id
+        required: true
+        description: Run id
+      responses:
+        '200':
+          description: Run steps
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunStepsResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}/trace:
+    get:
+      operationId: runs.trace.get
+      summary: Get run trace
+      description: Return low-level execution trace events for debugging one run. Workflow runs expose observability phases or step records; agent runs expose parsed trace.jsonl events. The shape is intentionally extensible, but common fields are documented.
+      tags:
+      - Runs
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id.
+        required: true
+        description: Run id.
+      responses:
+        '200':
+          description: Run trace events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunTraceResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}/usage:
+    get:
+      operationId: runs.usage.get
+      summary: Get run usage
+      description: Get token, credit, duration, and execution usage for a run.
+      tags:
+      - Runs
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id
+        required: true
+        description: Run id
+      responses:
+        '200':
+          description: Run usage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunUsageResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+components:
+  schemas:
+    RunsListResponse:
+      type: object
+      properties:
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunListItem'
+        nextCursor:
+          anyOf:
+          - type: string
+          - type: 'null'
+      required:
+      - runs
+      - nextCursor
+      additionalProperties: false
+    RunTraceResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunTraceEvent'
+          description: Chronological trace events. Workflow runs return observability phases or step executions; agent runs return parsed trace.jsonl events.
+      required:
+      - events
+      additionalProperties: false
+    RunInput:
+      type: object
+      properties:
+        args:
+          description: Input arguments the run was started with.
+        files:
+          description: Uploaded input files (agent runs only).
+          type: array
+          items:
+            $ref: '#/components/schemas/RunFile'
+        metadata:
+          description: Caller-supplied run metadata, if any.
+      required:
+      - args
+      additionalProperties: false
+    RunUsage:
+      type: object
+      properties:
+        tokens:
+          type: object
+          properties:
+            input:
+              anyOf:
+              - type: number
+              - type: 'null'
+            output:
+              anyOf:
+              - type: number
+              - type: 'null'
+            cacheRead:
+              anyOf:
+              - type: number
+              - type: 'null'
+            cacheWrite:
+              anyOf:
+              - type: number
+              - type: 'null'
+          required:
+          - input
+          - output
+          - cacheRead
+          - cacheWrite
+          additionalProperties: false
+        creditsCharged:
+          anyOf:
+          - type: number
+          - type: 'null'
+        durationMs:
+          anyOf:
+          - type: number
+          - type: 'null'
+        llmCallCount:
+          description: LLM call count (workflow runs only).
+          type: number
+        ocrPagesProcessed:
+          description: OCR pages processed (workflow runs only).
+          type: number
+        agentTurns:
+          description: Agent conversation turns (agent runs only).
+          anyOf:
+          - type: number
+          - type: 'null'
+      required:
+      - tokens
+      - creditsCharged
+      - durationMs
+      additionalProperties: false
+    RunCancelResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum:
+          - workflow
+          - agent
+        finished:
+          type: boolean
+          description: True when the run has reached a terminal status.
+        execution:
+          type: object
+          properties:
+            status:
+              $ref: '#/components/schemas/ExecutionStatus'
+          required:
+          - status
+          additionalProperties: false
+        cancellation:
+          type: object
+          properties:
+            state:
+              type: string
+              enum:
+              - cancelled
+              - requested
+              - already_terminal
+              description: '`cancelled` — the run was terminated immediately (it had not started). `requested` — the run is in-flight; cancellation was requested and the status will become `cancelled` shortly. `already_terminal` — the run had already finished; nothing changed.'
+            wasStatus:
+              description: Run status at the time the cancel request was received.
+              $ref: '#/components/schemas/ExecutionStatus'
+          required:
+          - state
+          - wasStatus
+          additionalProperties: false
+      required:
+      - id
+      - type
+      - finished
+      - execution
+      - cancellation
+      additionalProperties: false
+    RunStartBody:
+      type: object
+      properties:
+        target:
+          type: string
+          minLength: 1
+          description: Automation target without a version suffix, e.g. workflows.invoice or agents.support.
+        input:
+          description: Scalar and structured automation arguments.
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties: {}
+        files:
+          description: 'File inputs as ingress references (`{ "$fileId": "file_..." }` or `{ "$inline": { filename, mimeType, base64 } }`). Upload bytes via multipart `files.<fieldName>` parts instead.'
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties:
+            anyOf:
+            - anyOf:
+              - type: object
+                properties:
+                  $fileId:
+                    type: string
+                    minLength: 1
+                    description: Reusable file-pool id to materialize
+                required:
+                - $fileId
+                additionalProperties: false
+              - type: object
+                properties:
+                  $inline:
+                    type: object
+                    properties:
+                      filename:
+                        type: string
+                        minLength: 1
+                        description: Original filename for the materialized artifact
+                      mimeType:
+                        type: string
+                        minLength: 1
+                        description: MIME type for the materialized artifact
+                      base64:
+                        type: string
+                        minLength: 1
+                        description: Base64-encoded file bytes
+                    required:
+                    - filename
+                    - mimeType
+                    - base64
+                    additionalProperties: false
+                required:
+                - $inline
+                additionalProperties: false
+            - type: array
+              items:
+                anyOf:
+                - type: object
+                  properties:
+                    $fileId:
+                      type: string
+                      minLength: 1
+                      description: Reusable file-pool id to materialize
+                  required:
+                  - $fileId
+                  additionalProperties: false
+                - type: object
+                  properties:
+                    $inline:
+                      type: object
+                      properties:
+                        filename:
+                          type: string
+                          minLength: 1
+                          description: Original filename for the materialized artifact
+                        mimeType:
+                          type: string
+                          minLength: 1
+                          description: MIME type for the materialized artifact
+                        base64:
+                          type: string
+                          minLength: 1
+                          description: Base64-encoded file bytes
+                      required:
+                      - filename
+                      - mimeType
+                      - base64
+                      additionalProperties: false
+                  required:
+                  - $inline
+                  additionalProperties: false
+        overrides:
+          description: Per-step output overrides. Workflow runs only.
+          type: object
+          properties:
+            steps:
+              type: object
+              propertyNames:
+                type: string
+              additionalProperties:
+                type: object
+                propertyNames:
+                  type: string
+                additionalProperties: {}
+        metadata:
+          description: Caller-supplied run metadata.
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties: {}
+      required:
+      - target
+      description: Run envelope. Declare provenance with the `X-Eigenpal-Trigger` header (`api` or `cli`). Legacy 0.5.12 body shapes remain accepted.
+    RunStepsResponse:
+      type: object
+      properties:
+        steps:
+          type: array
+          items: {}
+      required:
+      - steps
+      additionalProperties: false
+    RunArtifactsResponse:
+      type: object
+      properties:
+        artifacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunArtifact'
+      required:
+      - artifacts
+      additionalProperties: false
+    RunStartMultipartRequest:
+      type: object
+      properties:
+        target:
+          type: string
+          description: Automation target, e.g. `workflows.invoice`.
+        input:
+          description: JSON-encoded scalar input object.
+          type: string
+        overrides:
+          description: JSON-encoded step overrides.
+          type: string
+        metadata:
+          description: JSON-encoded run metadata.
+          type: string
+      required:
+      - target
+      additionalProperties:
+        description: Dynamic binary fields like `files.<fieldName>`.
+    RunError:
+      anyOf:
+      - type: string
+      - type: 'null'
+    RunStartResponse:
+      anyOf:
+      - $ref: '#/components/schemas/RunAccepted'
+      - $ref: '#/components/schemas/Run'
+    RunTrigger:
+      type: object
+      properties:
+        type:
+          anyOf:
+          - type: string
+          - type: 'null'
+        by:
+          anyOf:
+          - type: object
+            properties:
+              id:
+                type: string
+              name:
+                anyOf:
+                - type: string
+                - type: 'null'
+              email:
+                type: string
+            required:
+            - id
+            - name
+            - email
+            additionalProperties: false
+          - type: 'null'
+        email:
+          description: Inbound email trigger details (agent runs, `expand=input` not required).
+      required:
+      - type
+      - by
+      additionalProperties: false
+    RunSourceGit:
+      type: object
+      properties:
+        requestedRef:
+          anyOf:
+          - type: string
+          - type: 'null'
+        resolvedRef:
+          anyOf:
+          - type: string
+          - type: 'null'
+        resolvedTag:
+          anyOf:
+          - type: string
+          - type: 'null'
+        commitSha:
+          anyOf:
+          - type: string
+          - type: 'null'
+      required:
+      - requestedRef
+      - resolvedRef
+      - resolvedTag
+      - commitSha
+      additionalProperties: false
+    RunAccepted:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum:
+          - workflow
+          - agent
+        finished:
+          type: boolean
+          const: false
+        source:
+          $ref: '#/components/schemas/RunSource'
+      required:
+      - id
+      - type
+      - finished
+      additionalProperties: false
+    WorkflowRunExecution:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ExecutionStatus'
+        schemaValid:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          description: Whether the completed output matched the workflow or agent output schema.
+        batchId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Experiment batch id when the run is part of a batch.
+        retry:
+          $ref: '#/components/schemas/RunExecutionRetry'
+        review:
+          anyOf:
+          - $ref: '#/components/schemas/RunReview'
+          - type: 'null'
+        steps:
+          type: array
+          items: {}
+          description: Per-step executions of the workflow run.
+        definitionSnapshot:
+          description: Workflow definition snapshot captured when the run was created.
+          anyOf:
+          - {}
+          - type: 'null'
+        expected:
+          description: Ground-truth expected output and files.
+          type: object
+          properties:
+            output: {}
+            files:
+              type: array
+              items:
+                $ref: '#/components/schemas/RunFile'
+          additionalProperties: false
+      required:
+      - status
+      - schemaValid
+      - batchId
+      - retry
+      - steps
+      additionalProperties: false
+    RunReview:
+      type: object
+      properties:
+        id:
+          type: string
+        verdict:
+          anyOf:
+          - type: string
+            enum:
+            - correct
+            - incorrect
+          - type: 'null'
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+          - wont_fix
+        note:
+          type: string
+        correctedOutput:
+          anyOf:
+          - {}
+          - type: 'null'
+        reviewedBy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: User id of the last reviewer. Read-only; set from the authenticated user or API key creator.
+        reviewedByEmail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Email of the last reviewer. Read-only; set from the authenticated user or API key creator.
+        reviewedAt:
+          type: string
+        closedBy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: User id recorded when the review was closed. Read-only; set when status becomes closed or wont_fix.
+        closedByEmail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Email recorded when the review was closed. Read-only; set when status becomes closed or wont_fix.
+        closedAt:
+          anyOf:
+          - type: string
+          - type: 'null'
+        closedNote:
+          anyOf:
+          - type: string
+          - type: 'null'
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        corrections:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunReviewCorrection'
+      required:
+      - id
+      - verdict
+      - status
+      - note
+      - reviewedBy
+      - reviewedByEmail
+      - reviewedAt
+      - closedBy
+      - closedByEmail
+      - closedAt
+      - closedNote
+      - createdAt
+      - updatedAt
+      - corrections
+      additionalProperties: false
+    AgentRunExecution:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ExecutionStatus'
+        schemaValid:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          description: Whether the completed output matched the workflow or agent output schema.
+        batchId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Experiment batch id when the run is part of a batch.
+        retry:
+          $ref: '#/components/schemas/RunExecutionRetry'
+        review:
+          anyOf:
+          - $ref: '#/components/schemas/RunReview'
+          - type: 'null'
+        files:
+          type: object
+          properties:
+            output:
+              type: array
+              items:
+                $ref: '#/components/schemas/RunFile'
+              description: Output artifacts the agent produced.
+          required:
+          - output
+          additionalProperties: false
+        expected:
+          description: Ground-truth expected output and files.
+          type: object
+          properties:
+            output: {}
+            files:
+              type: array
+              items:
+                $ref: '#/components/schemas/RunFile'
+          additionalProperties: false
+        comparison:
+          description: Expected-vs-actual comparison for eval runs (terminal runs only).
+      required:
+      - status
+      - schemaValid
+      - batchId
+      - retry
+      - files
+      additionalProperties: false
+    ExecutionStatus:
+      type: string
+      enum:
+      - created
+      - pending
+      - running
+      - waiting
+      - finalizing
+      - completed
+      - failed
+      - cancelled
+      - rejected
+    RunEventsResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunEvent'
+      required:
+      - events
+      additionalProperties: false
+    RunExecutionMeta:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ExecutionStatus'
+        schemaValid:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          description: Whether the completed output matched the workflow or agent output schema.
+        batchId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Experiment batch id when the run is part of a batch.
+        retry:
+          $ref: '#/components/schemas/RunExecutionRetry'
+        review:
+          description: Lightweight review state for run list rows.
+          anyOf:
+          - $ref: '#/components/schemas/RunReviewSummary'
+          - type: 'null'
+      required:
+      - status
+      - schemaValid
+      - batchId
+      - retry
+      additionalProperties: false
+    RunExecutionRetry:
+      type: object
+      properties:
+        number:
+          type: number
+          description: Retry attempt index (0 = original run).
+        previousRunId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Run id of the prior attempt in the retry chain.
+        nextRun:
+          anyOf:
+          - type: object
+            properties:
+              id:
+                type: string
+              status:
+                type: string
+            required:
+            - id
+            - status
+            additionalProperties: false
+          - type: 'null'
+          description: Retry run spawned from this run, if any.
+      required:
+      - number
+      - previousRunId
+      - nextRun
+      additionalProperties: false
+    RunDebug:
+      type: object
+      properties:
+        observability:
+          description: Execution phase timeline and structured failure.
+        traceId:
+          description: Workflow trace id for span lookup (workflow runs only).
+          anyOf:
+          - type: string
+          - type: 'null'
+      required:
+      - observability
+      additionalProperties: false
+    RunFile:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+      - name
+      additionalProperties: false
+    RunRerunResponse:
+      $ref: '#/components/schemas/RunStartResponse'
+    RunReviewSummary:
+      type: object
+      properties:
+        verdict:
+          anyOf:
+          - type: string
+            enum:
+            - correct
+            - incorrect
+          - type: 'null'
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+          - wont_fix
+        hasNote:
+          type: boolean
+          description: True when review notes were left.
+        correctionCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Number of field/file corrections.
+      required:
+      - verdict
+      - status
+      - hasNote
+      - correctionCount
+      additionalProperties: false
+    RunTiming:
+      type: object
+      properties:
+        createdAt:
+          type: string
+        startedAt:
+          anyOf:
+          - type: string
+          - type: 'null'
+        completedAt:
+          anyOf:
+          - type: string
+          - type: 'null'
+        durationMs:
+          anyOf:
+          - type: number
+          - type: 'null'
+        cancelRequestedAt:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: When the user requested cancel; status may still be `running` until the worker stops.
+      required:
+      - createdAt
+      - startedAt
+      - completedAt
+      - durationMs
+      - cancelRequestedAt
+      additionalProperties: false
+    RunArtifact:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+          description: '`input`, `output`, `debug`, `report`, or another stable artifact role.'
+        path:
+          type: string
+          description: Canonical artifact path for GET /api/v1/runs/:id/artifacts/:path.
+        stepName:
+          description: Workflow step that produced the file, when known.
+          type: string
+        contentType:
+          anyOf:
+          - type: string
+          - type: 'null'
+        size:
+          anyOf:
+          - type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+          - type: 'null'
+      required:
+      - name
+      - role
+      - path
+      additionalProperties: false
+    RunEval:
+      type: object
+      properties:
+        example:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Eval example label (agent example name or workflow example id).
+        exampleId:
+          description: Workflow eval example folder id (workflow runs only).
+          anyOf:
+          - type: string
+          - type: 'null'
+        score:
+          anyOf:
+          - type: number
+          - type: 'null'
+        passed:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+      required:
+      - example
+      - score
+      - passed
+      additionalProperties: false
+    RunSource:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Owning workflow id or agent id.
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+        version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Workflow version label (workflow runs only).
+        versionId:
+          description: Captured workflow version id (workflow runs only).
+          anyOf:
+          - type: string
+          - type: 'null'
+        slug:
+          description: Agent slug (agent runs only).
+          anyOf:
+          - type: string
+          - type: 'null'
+        model:
+          description: LLM model used (agent runs only).
+          anyOf:
+          - type: string
+          - type: 'null'
+        git:
+          description: Git provenance (agent runs only).
+          anyOf:
+          - $ref: '#/components/schemas/RunSourceGit'
+          - type: 'null'
+        implementationAvailable:
+          description: Whether the live workflow/agent implementation still exists (`GET /api/v1/runs/:id` detail only).
+          type: boolean
+        automationFound:
+          description: Whether the owning automation registry row still exists (`GET /api/v1/runs/:id` detail only).
+          type: boolean
+        currentVersion:
+          description: Current released workflow version label when the source is live (`GET /api/v1/runs/:id` detail only).
+          anyOf:
+          - type: string
+          - type: 'null'
+      required:
+      - id
+      - name
+      - version
+      additionalProperties: false
+    Run:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum:
+          - workflow
+          - agent
+        finished:
+          type: boolean
+          description: True when the run has reached a terminal status.
+        sampleRank:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Deterministic pseudo-random rank in [0, 1) for this run within the tenant. Use with a sample rate threshold to review a stable subset.
+        timing:
+          $ref: '#/components/schemas/RunTiming'
+        source:
+          $ref: '#/components/schemas/RunSource'
+        trigger:
+          $ref: '#/components/schemas/RunTrigger'
+        eval:
+          description: Present only when the run is eval-scoped.
+          $ref: '#/components/schemas/RunEval'
+        output:
+          description: Completed runs only.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        files:
+          description: Completed runs only. Download with GET /api/v1/runs/:id/artifacts/:path.
+          type: array
+          items:
+            $ref: '#/components/schemas/RunArtifact'
+        error:
+          description: Terminal failure message. Null when the run succeeded or is still in flight.
+          $ref: '#/components/schemas/RunError'
+        input:
+          description: '`expand=input`.'
+          $ref: '#/components/schemas/RunInput'
+        usage:
+          description: '`expand=usage`. Null for old runs without telemetry.'
+          anyOf:
+          - $ref: '#/components/schemas/RunUsage'
+          - type: 'null'
+        execution:
+          anyOf:
+          - $ref: '#/components/schemas/RunExecutionMeta'
+          - $ref: '#/components/schemas/RunExecution'
+          description: Slim execution metadata always present. Pass `expand=execution` to replace with full RunExecution (WorkflowRunExecution or AgentRunExecution depending on run type).
+        debug:
+          description: '`expand=debug`.'
+          $ref: '#/components/schemas/RunDebug'
+      required:
+      - id
+      - type
+      - finished
+      - sampleRank
+      - timing
+      - source
+      - trigger
+      - execution
+      additionalProperties: false
+    RunUsageResponse:
+      type: object
+      properties:
+        usage:
+          anyOf:
+          - $ref: '#/components/schemas/RunUsage'
+          - type: 'null'
+      required:
+      - usage
+      additionalProperties: false
+    RunExecution:
+      anyOf:
+      - $ref: '#/components/schemas/WorkflowRunExecution'
+      - $ref: '#/components/schemas/AgentRunExecution'
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
+    RunListItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum:
+          - workflow
+          - agent
+        finished:
+          type: boolean
+          description: True when the run has reached a terminal status.
+        sampleRank:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Deterministic pseudo-random rank in [0, 1) for this run within the tenant. Use with a sample rate threshold to review a stable subset.
+        timing:
+          $ref: '#/components/schemas/RunTiming'
+        source:
+          $ref: '#/components/schemas/RunSource'
+        trigger:
+          $ref: '#/components/schemas/RunTrigger'
+        eval:
+          description: Present only when the run is eval-scoped.
+          $ref: '#/components/schemas/RunEval'
+        error:
+          description: Terminal failure message. Null when the run succeeded or is still in flight.
+          $ref: '#/components/schemas/RunError'
+        execution:
+          $ref: '#/components/schemas/RunExecutionMeta'
+      required:
+      - id
+      - type
+      - finished
+      - sampleRank
+      - timing
+      - source
+      - trigger
+      - execution
+      additionalProperties: false
+    RunEvent:
+      type: object
+      properties:
+        type:
+          type: string
+        timestamp:
+          type: string
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+        message:
+          anyOf:
+          - type: string
+          - type: 'null'
+        metadata:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties: {}
+      required:
+      - type
+      - timestamp
+      additionalProperties: false
+    RunTraceEvent:
+      type: object
+      properties:
+        type:
+          description: Event type when present. Agent traces mirror trace.jsonl events; workflow traces use execution phase or step records.
+          type: string
+        phase:
+          description: Workflow execution phase, when present.
+          type: string
+        stepName:
+          description: Workflow step name, when present.
+          type: string
+        status:
+          description: Event or execution status, when present.
+          type: string
+        startedAt:
+          description: Event start timestamp.
+          anyOf:
+          - type: string
+          - type: 'null'
+        completedAt:
+          description: Event completion timestamp.
+          anyOf:
+          - type: string
+          - type: 'null'
+        message:
+          description: Human-readable event message.
+          anyOf:
+          - type: string
+          - type: 'null'
+      additionalProperties: {}
+      description: Trace event emitted by a workflow or agent run. Extra fields depend on the run type and event source.
+    RunReviewCorrection:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum:
+          - field
+          - file
+        path:
+          type: string
+          description: JSON Pointer for field corrections, or canonical artifact path for file reviews.
+        label:
+          anyOf:
+          - type: string
+          - type: 'null'
+        originalValue:
+          anyOf:
+          - {}
+          - type: 'null'
+        correctedValue:
+          anyOf:
+          - {}
+          - type: 'null'
+        note:
+          type: string
+        correctedArtifactPath:
+          anyOf:
+          - type: string
+          - type: 'null'
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+      - id
+      - kind
+      - path
+      - label
+      - note
+      - createdAt
+      - updatedAt
+      additionalProperties: false
+    ApiErrorIssue:
+      type: object
+      properties:
+        field:
+          type: string
+          description: JSON path of the offending field, or "<root>"
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
+      required:
+      - field
+      - message
+      - code
+      - severity
+      additionalProperties: false
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'API key issued from Settings → API Keys. Pass as `Authorization: Bearer <key>`.'

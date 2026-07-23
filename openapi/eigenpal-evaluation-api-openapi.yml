@@ -1,0 +1,3215 @@
+openapi: 3.1.0
+info:
+  title: Eigenpal Automations Evaluation API
+  version: 1.0.0
+  description: Public REST API for inspecting automations, starting and monitoring runs, managing files, collecting human reviews, and running evaluations.
+  contact:
+    name: Eigenpal
+    url: https://eigenpal.com
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://studio.eigenpal.com
+  description: Production
+security:
+- bearerAuth: []
+tags:
+- name: Evaluation
+  description: Manage datasets, examples, evaluators, experiment batches, evaluator scores, and run promotion workflows.
+paths:
+  /api/v1/automations/{id}/dataset/export:
+    get:
+      operationId: automations.dataset.export
+      summary: Export automation dataset
+      description: Download the automation dataset as a ZIP archive. The archive uses the examples/<name>/input and examples/<name>/expected folder convention, so it can be re-imported into another automation or environment.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: query
+        name: exampleIds
+        schema:
+          description: Optional comma-separated dataset example ids to export. Omit to export the full dataset.
+          type: string
+        description: Optional comma-separated dataset example ids to export. Omit to export the full dataset.
+      responses:
+        '200':
+          description: Dataset ZIP archive.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                description: ZIP archive
+                format: binary
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/dataset/import:
+    post:
+      operationId: automations.dataset.import
+      summary: Import automation dataset
+      description: Import a dataset ZIP archive using the examples/<name>/input and examples/<name>/expected folder convention. Use `mode=append` for additive imports or `mode=replace` to replace the dataset.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AutomationDatasetImportMultipartRequest'
+      responses:
+        '200':
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetImportResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/evaluators:
+    get:
+      operationId: automations.evaluators.get
+      summary: Get evaluators
+      description: Fetch the evaluator configuration for an automation. Evaluators produce automated `score` results, which are separate from human review verdicts.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      responses:
+        '200':
+          description: Evaluator YAML and parsed configuration.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluatorConfigResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    put:
+      operationId: automations.evaluators.update
+      summary: Replace evaluators
+      description: Replace the evaluator YAML for an automation. The submitted YAML is validated before it becomes the source for future experiment scores.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluatorConfigUpdate'
+      responses:
+        '200':
+          description: Updated evaluator YAML and parsed configuration.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluatorConfigResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/examples:
+    get:
+      operationId: automations.examples.list
+      summary: List dataset examples
+      description: List dataset examples for one automation. Examples contain input, expected output, expected files, metadata, and optional overrides used by evaluation runs.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias, such as `workflows.slug` or `agents.slug`.
+        required: true
+        description: Automation id or typed alias, such as `workflows.slug` or `agents.slug`.
+      - in: query
+        name: limit
+        schema:
+          description: Maximum number of examples to return.
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Maximum number of examples to return.
+      - in: query
+        name: offset
+        schema:
+          description: Zero-based offset for paging through examples.
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        description: Zero-based offset for paging through examples.
+      responses:
+        '200':
+          description: Page of dataset examples.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetExampleList'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    post:
+      operationId: automations.examples.create
+      summary: Create dataset example
+      description: Create one dataset example from JSON fields. Use dataset import for archive-based uploads and file-bearing examples.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias, such as `workflows.slug` or `agents.slug`.
+        required: true
+        description: Automation id or typed alias, such as `workflows.slug` or `agents.slug`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatasetExampleMutation'
+      responses:
+        '201':
+          description: Created dataset example.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetExample'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/examples/{exampleId}:
+    get:
+      operationId: automations.examples.get
+      summary: Get dataset example
+      description: Fetch one dataset example, including input, expected output, expected files, metadata, and overrides.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id. Agent examples may use deterministic name-derived ids returned by list/create responses.
+        required: true
+        description: Dataset example id. Agent examples may use deterministic name-derived ids returned by list/create responses.
+      responses:
+        '200':
+          description: Dataset example.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetExample'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    patch:
+      operationId: automations.examples.update
+      summary: Update dataset example
+      description: Partially update a dataset example. Omitted fields are preserved; pass null for nullable fields to clear them.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id. Agent examples may use deterministic name-derived ids returned by list/create responses.
+        required: true
+        description: Dataset example id. Agent examples may use deterministic name-derived ids returned by list/create responses.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatasetExampleUpdate'
+      responses:
+        '200':
+          description: Updated dataset example.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetExample'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    delete:
+      operationId: automations.examples.delete
+      summary: Delete dataset example
+      description: Delete one dataset example from the automation dataset. This removes the example from future experiments.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id. Agent examples may use deterministic name-derived ids returned by list/create responses.
+        required: true
+        description: Dataset example id. Agent examples may use deterministic name-derived ids returned by list/create responses.
+      responses:
+        '200':
+          description: Deleted dataset example.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetExample'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/examples/{exampleId}/expected:
+    get:
+      operationId: automations.examples.expected.files.list
+      summary: List expected files
+      description: List files stored under the expected folder for one automation dataset example.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id.
+        required: true
+        description: Dataset example id.
+      responses:
+        '200':
+          description: Expected file paths.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetExampleExpectedFileList'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    post:
+      operationId: automations.examples.expected.files.create
+      summary: Upload expected files
+      description: Upload one or more files into the expected folder for an automation dataset example. Use `$file` references such as `expected/result.pdf` from expected JSON to compare file outputs.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id.
+        required: true
+        description: Dataset example id.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DatasetExampleExpectedFileUploadRequest'
+      responses:
+        '201':
+          description: Uploaded expected files.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetExampleExpectedFileUploadResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/examples/{exampleId}/expected/{path}:
+    get:
+      operationId: automations.examples.expected.file.get
+      summary: Download expected dataset file
+      description: Download one expected file attached to an automation dataset example.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id.
+        required: true
+        description: Dataset example id.
+      - in: path
+        name: path
+        schema:
+          type: string
+          description: Path under the example expected folder.
+        required: true
+        description: Path under the example expected folder.
+      responses:
+        '200':
+          description: Expected dataset file.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                description: Expected file bytes.
+                format: binary
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    patch:
+      operationId: automations.examples.expected.file.update
+      summary: Rename expected file
+      description: Rename one expected file attached to an automation dataset example. The parent folder is preserved.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id.
+        required: true
+        description: Dataset example id.
+      - in: path
+        name: path
+        schema:
+          type: string
+          description: Path under the example expected folder.
+        required: true
+        description: Path under the example expected folder.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatasetExampleExpectedFileRenameRequest'
+      responses:
+        '200':
+          description: Renamed expected file.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetExampleExpectedFileRenameResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    delete:
+      operationId: automations.examples.expected.file.delete
+      summary: Delete expected file
+      description: Delete one file from an automation dataset example expected folder.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id.
+        required: true
+        description: Dataset example id.
+      - in: path
+        name: path
+        schema:
+          type: string
+          description: Path under the example expected folder.
+        required: true
+        description: Path under the example expected folder.
+      responses:
+        '200':
+          description: Expected file deleted.
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/examples/{exampleId}/input:
+    get:
+      operationId: automations.examples.input.files.list
+      summary: List input files
+      description: List files stored under the input folder for one automation dataset example.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id.
+        required: true
+        description: Dataset example id.
+      responses:
+        '200':
+          description: Input file paths.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetExampleInputFileList'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    post:
+      operationId: automations.examples.input.files.create
+      summary: Upload input files
+      description: Upload one or more files into the input folder for an automation dataset example. Use `$file` references such as `input/invoice.pdf` from the example input JSON to consume them.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id.
+        required: true
+        description: Dataset example id.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DatasetExampleInputFileUploadRequest'
+      responses:
+        '201':
+          description: Uploaded input files.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetExampleInputFileUploadResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/examples/{exampleId}/input/{path}:
+    get:
+      operationId: automations.examples.input.file.get
+      summary: Download input file
+      description: Download one file from an automation dataset example input folder.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id.
+        required: true
+        description: Dataset example id.
+      - in: path
+        name: path
+        schema:
+          type: string
+          description: Slash-delimited path under the example input folder.
+        required: true
+        description: Slash-delimited path under the example input folder.
+      responses:
+        '200':
+          description: Input file bytes.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                description: Input file bytes.
+                format: binary
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    patch:
+      operationId: automations.examples.input.file.update
+      summary: Rename input file
+      description: Rename one input file attached to an automation dataset example. The parent folder is preserved.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id.
+        required: true
+        description: Dataset example id.
+      - in: path
+        name: path
+        schema:
+          type: string
+          description: Slash-delimited path under the example input folder.
+        required: true
+        description: Slash-delimited path under the example input folder.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatasetExampleInputFileRenameRequest'
+      responses:
+        '200':
+          description: Renamed input file.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetExampleInputFileRenameResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    delete:
+      operationId: automations.examples.input.file.delete
+      summary: Delete input file
+      description: Delete one file from an automation dataset example input folder.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id.
+        required: true
+        description: Dataset example id.
+      - in: path
+        name: path
+        schema:
+          type: string
+          description: Slash-delimited path under the example input folder.
+        required: true
+        description: Slash-delimited path under the example input folder.
+      responses:
+        '200':
+          description: Input file deleted.
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/examples/{exampleId}/run:
+    post:
+      operationId: automations.examples.run
+      summary: Run dataset example
+      description: Start an asynchronous run using the input from one dataset example. Poll `GET /api/v1/runs/{id}` for completion and use run scores or review endpoints to review the result.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: exampleId
+        schema:
+          type: string
+          description: Dataset example id to run.
+        required: true
+        description: Dataset example id to run.
+      responses:
+        '201':
+          description: Example run accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExampleRunResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/experiments:
+    get:
+      operationId: automations.experiments.list
+      summary: List experiments
+      description: List experiment batches for one automation. Each experiment runs selected dataset examples and records automated evaluator scores.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: query
+        name: limit
+        schema:
+          description: Maximum number of experiment batches to return.
+          type: integer
+          minimum: 1
+          maximum: 500
+        description: Maximum number of experiment batches to return.
+      - in: query
+        name: offset
+        schema:
+          description: Zero-based offset for paging through experiment batches.
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        description: Zero-based offset for paging through experiment batches.
+      - in: query
+        name: fromDate
+        schema:
+          description: Filter to experiment batches created at or after this date or relative date.
+          type: string
+        description: Filter to experiment batches created at or after this date or relative date.
+      - in: query
+        name: toDate
+        schema:
+          description: Filter to experiment batches created at or before this date or relative date.
+          type: string
+        description: Filter to experiment batches created at or before this date or relative date.
+      responses:
+        '200':
+          description: Page of experiment batches.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Experiment'
+                  total:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  limit:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  offset:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                required:
+                - data
+                - total
+                - limit
+                - offset
+                additionalProperties: false
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    post:
+      operationId: automations.experiments.create
+      summary: Create experiment
+      description: Start an asynchronous experiment batch for one automation. Omit `examples` to run the full dataset, or pass specific example ids to run a subset.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExperimentCreate'
+      responses:
+        '202':
+          description: Experiment accepted and runs enqueued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperimentCreateResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/experiments/{experimentId}:
+    get:
+      operationId: automations.experiments.get
+      summary: Get experiment
+      description: Fetch one experiment batch with its run summaries and evaluator results grouped by run id.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: experimentId
+        schema:
+          type: string
+          description: Experiment batch id.
+        required: true
+        description: Experiment batch id.
+      responses:
+        '200':
+          description: Experiment detail with runs and results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperimentDetail'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/experiments/{experimentId}/cancel:
+    post:
+      operationId: automations.experiments.cancel
+      summary: Cancel experiment
+      description: Request cancellation for an experiment batch. Already-completed runs remain recorded; queued or running work is cancelled when possible.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: experimentId
+        schema:
+          type: string
+          description: Experiment batch id.
+        required: true
+        description: Experiment batch id.
+      responses:
+        '200':
+          description: Experiment detail after the cancellation request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperimentDetail'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/experiments/{experimentId}/export:
+    get:
+      operationId: automations.experiments.export
+      summary: Export experiment eval results
+      description: Download eval result rows for a single experiment batch as CSV or JSON.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: experimentId
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - csv
+          - json
+        required: true
+      - in: query
+        name: includeTrace
+        schema:
+          type: string
+          enum:
+          - '0'
+          - '1'
+          - 'true'
+          - 'false'
+      responses:
+        '200':
+          description: Eval results export
+          content:
+            text/csv:
+              schema:
+                type: string
+                description: CSV or JSON document
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/experiments/export:
+    get:
+      operationId: automations.experiments.exportAll
+      summary: Export all experiment eval results
+      description: Download every eval result row for an automation as CSV or JSON.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - csv
+          - json
+        required: true
+      responses:
+        '200':
+          description: Eval results export
+          content:
+            text/csv:
+              schema:
+                type: string
+                description: CSV or JSON document
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/automations/{id}/experiments/stream:
+    post:
+      operationId: automations.experiments.createStream
+      summary: Create automation experiment with NDJSON progress
+      description: Starts a batch eval experiment for workflow or agent automations and streams per-run completion events as NDJSON.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExperimentCreate'
+      responses:
+        '200':
+          description: NDJSON experiment progress stream
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: application/x-ndjson event stream
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/experiments/{experimentId}:
+    get:
+      operationId: experiments.resolve
+      summary: Resolve experiment by id
+      description: Returns the owning automation for an experiment batch id. Used when callers only know the experiment id.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: experimentId
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: Experiment reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperimentRef'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}/scores:
+    get:
+      operationId: runs.scores.list
+      summary: List run evaluator scores
+      description: List automated evaluator results for one run. Use `score` for evaluator output and run reviews for human verdicts.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id.
+        required: true
+        description: Run id.
+      responses:
+        '200':
+          description: Per-evaluator scores for the run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunScoresResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+components:
+  schemas:
+    DatasetExampleExpectedFileRenameRequest:
+      type: object
+      properties:
+        newFilename:
+          type: string
+          description: New basename for the file. The parent folder is preserved.
+      required:
+      - newFilename
+    DatasetExampleUpdate:
+      type: object
+      properties:
+        name:
+          description: Example name. Required on create; omitted or null uses a generated name where supported.
+          anyOf:
+          - type: string
+            minLength: 1
+            maxLength: 128
+          - type: 'null'
+        input:
+          description: Input arguments for the example.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        expected:
+          description: Expected JSON output. Null clears the expected output.
+          anyOf:
+          - {}
+          - type: 'null'
+        metadata:
+          description: Caller-managed metadata.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        annotation:
+          description: Human note about the example. Null clears the annotation.
+          anyOf:
+          - type: string
+            maxLength: 2000
+          - type: 'null'
+        rowOrder:
+          description: Optional display order. Null clears the order.
+          anyOf:
+          - type: integer
+            minimum: 0
+            maximum: 9007199254740991
+          - type: 'null'
+        overrides:
+          description: Step output overrides used during example runs.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+      additionalProperties: false
+      description: Partial update for a dataset example. Omitted fields are preserved.
+    Experiment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Experiment batch id. Some CLI commands historically call this a batch id.
+        automationId:
+          type: string
+          description: Automation this experiment belongs to.
+        automationType:
+          $ref: '#/components/schemas/AutomationType'
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          description: Experiment batch status.
+        runCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Total runs in the experiment.
+        completedCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs that have completed.
+        passedCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs whose evaluator scores passed.
+        failedCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs whose evaluator scores failed.
+        avgScore:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Average automated evaluator score.
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+        completedAt:
+          anyOf:
+          - anyOf:
+            - type: string
+            - type: string
+          - type: 'null'
+        version:
+          anyOf:
+          - type: string
+          - type: 'null'
+      required:
+      - id
+      - automationId
+      - automationType
+      - status
+      - runCount
+      - completedCount
+      - passedCount
+      - failedCount
+      - avgScore
+      - createdAt
+      - completedAt
+      - version
+      additionalProperties: false
+      description: Experiment batch summary for an automation dataset run.
+    DatasetExampleInputFileUploadRequest:
+      type: object
+      properties:
+        file:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: One or more input files to upload.
+      required:
+      - file
+    DatasetExampleExpectedFileUploadRequest:
+      type: object
+      properties:
+        file:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: One or more expected files to upload.
+      required:
+      - file
+    DatasetExampleList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetExample'
+        total:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        limit:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        offset:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+      - data
+      - total
+      - limit
+      - offset
+      additionalProperties: false
+    AutomationDatasetImportMultipartRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          description: Dataset ZIP file
+          format: binary
+        mode:
+          description: '`append` adds examples without deleting existing rows. `replace` deletes the current dataset before importing.'
+          type: string
+          enum:
+          - append
+          - replace
+      required:
+      - file
+    DatasetExampleExpectedFileRenameResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          const: true
+        filename:
+          type: string
+        path:
+          type: string
+          description: Updated expected file path.
+      required:
+      - ok
+      - filename
+      - path
+      additionalProperties: false
+    ExperimentCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Experiment batch id.
+        runs:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Run id.
+              exampleId:
+                anyOf:
+                - type: string
+                - type: 'null'
+                description: Dataset example id.
+            required:
+            - id
+            - exampleId
+            additionalProperties: false
+          description: Runs enqueued for this experiment.
+        total:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Number of runs enqueued.
+      required:
+      - id
+      - runs
+      - total
+      additionalProperties: false
+      description: Accepted experiment batch and the runs it enqueued.
+    DatasetExampleInputFileUploadResponse:
+      type: object
+      properties:
+        uploaded:
+          type: array
+          items:
+            type: string
+          description: Stored input file paths.
+      required:
+      - uploaded
+      additionalProperties: false
+    DatasetExampleInputFileRenameRequest:
+      type: object
+      properties:
+        newFilename:
+          type: string
+          description: New basename for the file. The parent folder is preserved.
+      required:
+      - newFilename
+    ExperimentRef:
+      type: object
+      properties:
+        id:
+          type: string
+        automationId:
+          type: string
+      required:
+      - id
+      - automationId
+      additionalProperties: false
+    DatasetImportResponse:
+      anyOf:
+      - type: object
+        properties:
+          mode:
+            type: string
+            const: append
+          created:
+            type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+          expectedSet:
+            type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+          skipped:
+            type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+          issues:
+            type: array
+            items: {}
+        required:
+        - mode
+        - created
+        - expectedSet
+        - skipped
+        - issues
+        additionalProperties: false
+      - type: object
+        properties:
+          mode:
+            type: string
+            const: replace
+          created:
+            type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+          expectedSet:
+            type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+          deleted:
+            type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+          filesDeleted:
+            type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+        required:
+        - mode
+        - created
+        - expectedSet
+        - deleted
+        - filesDeleted
+        additionalProperties: false
+    ExperimentCreate:
+      type: object
+      properties:
+        examples:
+          description: Optional dataset example ids to run. Omit to run the full dataset.
+          type: array
+          items:
+            type: string
+        batchConcurrency:
+          description: Maximum concurrent example runs for this experiment.
+          anyOf:
+          - type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+          - type: 'null'
+        sourceRef:
+          description: Optional source version/ref to use for experiment runs.
+          type: string
+      description: Request body for starting an experiment batch.
+    RunScoresResponse:
+      type: object
+      properties:
+        scores:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvalResult'
+          description: Automated evaluator scores for the run. These are separate from human review verdicts.
+      required:
+      - scores
+      additionalProperties: false
+      description: Automated evaluator results attached to a run.
+    DatasetExampleMutation:
+      type: object
+      properties:
+        name:
+          description: Example name. Required on create; omitted or null uses a generated name where supported.
+          anyOf:
+          - type: string
+            minLength: 1
+            maxLength: 128
+          - type: 'null'
+        input:
+          description: Input arguments for the example.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        expected:
+          description: Expected JSON output. Null clears the expected output.
+          anyOf:
+          - {}
+          - type: 'null'
+        metadata:
+          description: Caller-managed metadata.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        annotation:
+          description: Human note about the example. Null clears the annotation.
+          anyOf:
+          - type: string
+            maxLength: 2000
+          - type: 'null'
+        rowOrder:
+          description: Optional display order. Null clears the order.
+          anyOf:
+          - type: integer
+            minimum: 0
+            maximum: 9007199254740991
+          - type: 'null'
+        overrides:
+          description: Step output overrides used during example runs.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+      description: Fields used to create or update a dataset example.
+    DatasetExampleInputFileRenameResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          const: true
+        filename:
+          type: string
+        path:
+          type: string
+          description: Updated input file path.
+      required:
+      - ok
+      - filename
+      - path
+      additionalProperties: false
+    DatasetExample:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Stable public example id. Workflow examples use DB ids; agent examples use deterministic name-derived ids.
+        name:
+          type: string
+          description: Human-readable dataset example name.
+        automationId:
+          type: string
+          description: Automation that owns this example.
+        automationType:
+          $ref: '#/components/schemas/AutomationType'
+        input:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+          description: Input arguments used when this example is run.
+        expected:
+          anyOf:
+          - {}
+          - type: 'null'
+          description: Expected JSON output for evaluator comparisons.
+        expectedFiles:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Expected file name.
+              url:
+                description: Download URL for the expected file.
+                type: string
+            required:
+            - name
+            additionalProperties: false
+          description: Expected files attached to this example.
+        metadata:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+          description: Caller-managed metadata for sorting or filtering examples.
+        annotation:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Human note about the example.
+        rowOrder:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Optional display order within the dataset.
+        overrides:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+          description: Step output overrides used when running this example.
+        latestRunId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Most recent run id created from this example.
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+        updatedAt:
+          anyOf:
+          - anyOf:
+            - type: string
+            - type: string
+          - type: 'null'
+      required:
+      - id
+      - name
+      - automationId
+      - automationType
+      - input
+      - expected
+      - expectedFiles
+      - metadata
+      - annotation
+      - rowOrder
+      - overrides
+      - latestRunId
+      additionalProperties: false
+      description: One input/expected-output row in an automation dataset.
+    DatasetExampleInputFileList:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+          description: Paths under the example input folder.
+      required:
+      - files
+      additionalProperties: false
+    ExperimentDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Experiment batch id. Some CLI commands historically call this a batch id.
+        automationId:
+          type: string
+          description: Automation this experiment belongs to.
+        automationType:
+          $ref: '#/components/schemas/AutomationType'
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          description: Experiment batch status.
+        runCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Total runs in the experiment.
+        completedCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs that have completed.
+        passedCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs whose evaluator scores passed.
+        failedCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs whose evaluator scores failed.
+        avgScore:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Average automated evaluator score.
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+        completedAt:
+          anyOf:
+          - anyOf:
+            - type: string
+            - type: string
+          - type: 'null'
+        version:
+          anyOf:
+          - type: string
+          - type: 'null'
+        runs:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Run id created for the experiment.
+              status:
+                type: string
+                description: Current run status.
+              exampleId:
+                anyOf:
+                - type: string
+                - type: 'null'
+                description: Dataset example id for the run.
+              exampleName:
+                anyOf:
+                - type: string
+                - type: 'null'
+                description: Dataset example name for the run.
+              createdAt:
+                anyOf:
+                - type: string
+                - type: string
+              completedAt:
+                anyOf:
+                - anyOf:
+                  - type: string
+                  - type: string
+                - type: 'null'
+            required:
+            - id
+            - status
+            - exampleId
+            - exampleName
+            - createdAt
+            - completedAt
+            additionalProperties: false
+          description: Runs created for dataset examples in this experiment.
+        resultsByRun:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/EvalResult'
+          description: Evaluator results keyed by run id.
+      required:
+      - id
+      - automationId
+      - automationType
+      - status
+      - runCount
+      - completedCount
+      - passedCount
+      - failedCount
+      - avgScore
+      - createdAt
+      - completedAt
+      - version
+      - runs
+      - resultsByRun
+      additionalProperties: false
+      description: Experiment batch detail.
+    EvalResult:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Evaluator result id.
+        runId:
+          type: string
+          description: Run this score belongs to.
+        automationId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Automation this score belongs to.
+        evaluatorName:
+          type: string
+          description: Evaluator name from configuration.
+        evaluatorType:
+          type: string
+          description: Evaluator implementation type.
+        score:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Automated evaluator score. Do not confuse this with a human review verdict.
+        passed:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          description: Whether this evaluator passed.
+        label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Optional evaluator label.
+        weight:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Weight used in aggregate scoring.
+        passThreshold:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Score threshold required for this evaluator to pass.
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Evaluator description.
+        details:
+          anyOf:
+          - {}
+          - type: 'null'
+          description: Evaluator-specific details.
+        error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Evaluator error, when scoring failed.
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+      required:
+      - id
+      - runId
+      - automationId
+      - evaluatorName
+      - evaluatorType
+      - score
+      - passed
+      - label
+      - weight
+      - passThreshold
+      - description
+      - details
+      - error
+      - createdAt
+      additionalProperties: false
+      description: Automated evaluator result for one run.
+    DatasetExampleExpectedFileUploadResponse:
+      type: object
+      properties:
+        uploaded:
+          type: array
+          items:
+            type: string
+          description: Stored expected file paths.
+      required:
+      - uploaded
+      additionalProperties: false
+    EvaluatorConfigResponse:
+      type: object
+      properties:
+        automationId:
+          type: string
+          description: Automation that owns this evaluator config.
+        automationType:
+          $ref: '#/components/schemas/AutomationType'
+        yaml:
+          type: string
+          description: Evaluator configuration YAML.
+        config:
+          type: object
+          properties:
+            evaluators:
+              type: array
+              items: {}
+              description: Parsed evaluator definitions from the YAML.
+            passThreshold:
+              type: number
+              description: Overall score threshold required for the experiment to pass.
+          required:
+          - evaluators
+          - passThreshold
+          additionalProperties: false
+      required:
+      - automationId
+      - automationType
+      - yaml
+      - config
+      additionalProperties: false
+      description: Evaluator YAML and parsed evaluator configuration for an automation.
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
+    EvaluatorConfigUpdate:
+      type: object
+      properties:
+        yaml:
+          type: string
+          minLength: 1
+          maxLength: 1048576
+          description: Complete evaluator YAML to validate and store.
+      required:
+      - yaml
+      description: Replacement evaluator configuration.
+    DatasetExampleExpectedFileList:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+          description: Paths under the example expected folder.
+      required:
+      - files
+      additionalProperties: false
+    ExampleRunResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Run id created for this example.
+        type:
+          type: string
+          enum:
+          - workflow
+          - agent
+          description: Implementation type behind the automation.
+        batchId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Experiment batch id when the run is associated with a batch. The API also calls this an experiment id in experiment routes.
+        finished:
+          type: boolean
+          const: false
+          description: Example runs are accepted asynchronously.
+      required:
+      - id
+      - type
+      - batchId
+      - finished
+      additionalProperties: false
+    ApiErrorIssue:
+      type: object
+      properties:
+        field:
+          type: string
+          description: JSON path of the offending field, or "<root>"
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
+      required:
+      - field
+      - message
+      - code
+      - severity
+      additionalProperties: false
+    AutomationType:
+      type: string
+      enum:
+      - workflow
+      - agent
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'API key issued from Settings → API Keys. Pass as `Authorization: Bearer <key>`.'

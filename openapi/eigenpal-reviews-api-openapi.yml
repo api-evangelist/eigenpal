@@ -1,0 +1,1386 @@
+openapi: 3.1.0
+info:
+  title: Eigenpal Automations Reviews API
+  version: 1.0.0
+  description: Public REST API for inspecting automations, starting and monitoring runs, managing files, collecting human reviews, and running evaluations.
+  contact:
+    name: Eigenpal
+    url: https://eigenpal.com
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://studio.eigenpal.com
+  description: Production
+security:
+- bearerAuth: []
+tags:
+- name: Reviews
+  description: Record human review verdicts, manage corrected outputs, and monitor review health.
+paths:
+  /api/v1/automations/{id}/reviews/health:
+    get:
+      operationId: automations.reviews.health
+      summary: Get automation review health
+      description: Aggregates reviewed correctness, review coverage, bucketed counts, and rolling-window confidence for one automation. Prefer this endpoint for single-automation monitoring dashboards.
+      tags:
+      - Reviews
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Workflow id, agent id, or typed alias like workflows.slug / agents.slug.
+        required: true
+        description: Workflow id, agent id, or typed alias like workflows.slug / agents.slug.
+      - in: query
+        name: type
+        schema:
+          description: 'Comma-separated: workflow,agent.'
+          type: string
+        description: 'Comma-separated: workflow,agent.'
+      - in: query
+        name: status
+        schema:
+          description: Comma-separated execution statuses.
+          type: string
+        description: Comma-separated execution statuses.
+      - in: query
+        name: trigger
+        schema:
+          description: Comma-separated trigger types.
+          type: string
+        description: Comma-separated trigger types.
+      - in: query
+        name: triggeredBy
+        schema:
+          description: Comma-separated user ids, or __system__ for system-triggered runs.
+          type: string
+        description: Comma-separated user ids, or __system__ for system-triggered runs.
+      - in: query
+        name: sourceRef
+        schema:
+          type: string
+      - in: query
+        name: batchId
+        schema:
+          type: string
+      - in: query
+        name: exampleId
+        schema:
+          type: string
+      - in: query
+        name: exampleIdContains
+        schema:
+          type: string
+      - in: query
+        name: from
+        schema:
+          description: Start of the run-created time range. Defaults to now-30d.
+          type: string
+        description: Start of the run-created time range. Defaults to now-30d.
+      - in: query
+        name: to
+        schema:
+          description: End of the run-created time range.
+          type: string
+        description: End of the run-created time range.
+      - in: query
+        name: completedAfter
+        schema:
+          type: string
+      - in: query
+        name: completedBefore
+        schema:
+          type: string
+      - in: query
+        name: experiments
+        schema:
+          description: Set to false to exclude experiment batch runs.
+          type: string
+        description: Set to false to exclude experiment batch runs.
+      - in: query
+        name: bucket
+        schema:
+          description: Calendar bucket size for the bar chart series. Defaults to day.
+          type: string
+          enum:
+          - day
+          - week
+          - month
+        description: Calendar bucket size for the bar chart series. Defaults to day.
+      - in: query
+        name: rollingWindow
+        schema:
+          description: Number of reviewed runs per rolling correctness point. Defaults to 100.
+          type: integer
+          minimum: 1
+          maximum: 1000
+        description: Number of reviewed runs per rolling correctness point. Defaults to 100.
+      - in: query
+        name: minRollingReviews
+        schema:
+          description: Minimum reviewed runs required before emitting rolling points. Defaults to 1.
+          type: integer
+          minimum: 1
+          maximum: 1000
+        description: Minimum reviewed runs required before emitting rolling points. Defaults to 1.
+      responses:
+        '200':
+          description: Automation review health metrics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunReviewHealthResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}/promote:
+    post:
+      operationId: runs.promote
+      summary: Promote run to example
+      description: Turn a reviewed run into a dataset example. The new example uses the run input and any corrected output/files stored through the review endpoints.
+      tags:
+      - Reviews
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id.
+        required: true
+        description: Run id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromoteRunRequest'
+      responses:
+        '200':
+          description: Created or updated a dataset example from the run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromoteRunResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}/reviews:
+    get:
+      operationId: runs.reviews.get
+      summary: Get run review
+      description: Returns review metadata and corrections for a run. Corrected files are listed at GET /runs/{id}/reviews/expected; embed review + expected artifacts with GET /runs/{id}?expand=execution.
+      tags:
+      - Reviews
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id.
+        required: true
+        description: Run id.
+      responses:
+        '200':
+          description: Run review metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunReviewDetail'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    put:
+      operationId: runs.reviews.update
+      summary: Update run review
+      description: Create or replace review metadata for a run.
+      tags:
+      - Reviews
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id.
+        required: true
+        description: Run id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunReviewRequest'
+      responses:
+        '200':
+          description: Updated run review metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunReviewDetail'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    delete:
+      operationId: runs.reviews.clear
+      summary: Clear run review
+      description: Deletes review metadata, corrections, and corrected files for the run.
+      tags:
+      - Reviews
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id.
+        required: true
+        description: Run id.
+      responses:
+        '200':
+          description: Empty run review state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunReviewDetail'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}/reviews/expected:
+    get:
+      operationId: runs.reviews.expected.get
+      summary: List corrected files
+      description: Returns corrected artifact files attached to the run review. Review metadata and corrected JSON output live at GET /runs/{id}/reviews.
+      tags:
+      - Reviews
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id.
+        required: true
+        description: Run id.
+      responses:
+        '200':
+          description: Corrected artifact files.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunReviewExpectedArtifacts'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    post:
+      operationId: runs.reviews.expected.create
+      summary: Add corrected file
+      description: Attach one corrected file to a run review. Send multipart/form-data with `file` and optional `name` to upload a local file, or JSON with `outputFileName` and optional `expectedName` to copy an existing run output file.
+      tags:
+      - Reviews
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id.
+        required: true
+        description: Run id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunReviewExpectedFileCopyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RunReviewExpectedFileUploadRequest'
+      responses:
+        '201':
+          description: Corrected file created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunReviewExpectedFileMutationResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /api/v1/runs/{id}/reviews/expected/{filename}:
+    get:
+      operationId: runs.reviews.expected.file.get
+      summary: Download corrected artifact file
+      description: Downloads one corrected artifact file attached to the run review. Use the `filename` returned by the corrected-output collection endpoint.
+      tags:
+      - Reviews
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id.
+        required: true
+        description: Run id.
+      - in: path
+        name: filename
+        schema:
+          type: string
+          description: Corrected artifact file name or slash-delimited path, as returned by `GET /runs/{id}/reviews/expected`.
+        required: true
+        description: Corrected artifact file name or slash-delimited path, as returned by `GET /runs/{id}/reviews/expected`.
+      responses:
+        '200':
+          description: Corrected file bytes.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                description: Corrected file bytes.
+                format: binary
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    patch:
+      operationId: runs.reviews.expected.file.update
+      summary: Rename corrected artifact file
+      description: Renames one corrected artifact file attached to the run review.
+      tags:
+      - Reviews
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id.
+        required: true
+        description: Run id.
+      - in: path
+        name: filename
+        schema:
+          type: string
+          description: Corrected artifact file name or slash-delimited path, as returned by `GET /runs/{id}/reviews/expected`.
+        required: true
+        description: Corrected artifact file name or slash-delimited path, as returned by `GET /runs/{id}/reviews/expected`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunReviewExpectedFileUpdateRequest'
+      responses:
+        '200':
+          description: Renamed corrected file.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunReviewExpectedFileUpdateResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    delete:
+      operationId: runs.reviews.expected.file.delete
+      summary: Delete corrected artifact file
+      description: Deletes one corrected artifact file attached to the run review.
+      tags:
+      - Reviews
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Run id.
+        required: true
+        description: Run id.
+      - in: path
+        name: filename
+        schema:
+          type: string
+          description: Corrected artifact file name or slash-delimited path, as returned by `GET /runs/{id}/reviews/expected`.
+        required: true
+        description: Corrected artifact file name or slash-delimited path, as returned by `GET /runs/{id}/reviews/expected`.
+      responses:
+        '204':
+          description: Corrected file deleted; no response body.
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+components:
+  schemas:
+    RunReviewHealthBucket:
+      type: object
+      properties:
+        start:
+          type: string
+        end:
+          type: string
+        totalRuns:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        reviewedRuns:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs with a ranked verdict (`correct` or `incorrect`). Null verdict (nit) is excluded.
+        reviewCoverage:
+          anyOf:
+          - type: number
+          - type: 'null'
+        correctReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        incorrectReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        nitReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs with a review row and null verdict (nit). Excluded from review coverage and accuracy.
+        reviewedCorrectness:
+          anyOf:
+          - type: number
+          - type: 'null'
+      required:
+      - start
+      - end
+      - totalRuns
+      - reviewedRuns
+      - reviewCoverage
+      - correctReviews
+      - incorrectReviews
+      - nitReviews
+      - reviewedCorrectness
+      additionalProperties: false
+    PromoteRunResponse:
+      type: object
+      properties:
+        automationId:
+          type: string
+          description: Automation that owns the promoted example.
+        automationType:
+          type: string
+          enum:
+          - workflow
+          - agent
+          description: Implementation type behind the automation.
+        exampleId:
+          type: string
+          description: Dataset example identifier returned for follow-up API calls.
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dataset example name.
+      required:
+      - automationId
+      - automationType
+      - exampleId
+      - name
+      additionalProperties: false
+    RunReviewHealthSummary:
+      type: object
+      properties:
+        totalRuns:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        reviewedRuns:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs with a ranked verdict (`correct` or `incorrect`). Null verdict (nit) is excluded.
+        reviewCoverage:
+          anyOf:
+          - type: number
+          - type: 'null'
+        correctReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        incorrectReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        nitReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs with a review row and null verdict (nit). Excluded from review coverage and accuracy.
+        reviewedCorrectness:
+          anyOf:
+          - type: number
+          - type: 'null'
+        confidence:
+          $ref: '#/components/schemas/RunReviewHealthConfidence'
+      required:
+      - totalRuns
+      - reviewedRuns
+      - reviewCoverage
+      - correctReviews
+      - incorrectReviews
+      - nitReviews
+      - reviewedCorrectness
+      - confidence
+      additionalProperties: false
+    RunReviewHealthResponse:
+      type: object
+      properties:
+        timeRange:
+          type: object
+          properties:
+            from:
+              type: string
+            to:
+              type: string
+          required:
+          - from
+          - to
+          additionalProperties: false
+        granularity:
+          type: object
+          properties:
+            bucket:
+              type: string
+              enum:
+              - day
+              - week
+              - month
+            rollingWindow:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            minRollingReviews:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+          required:
+          - bucket
+          - rollingWindow
+          - minRollingReviews
+          additionalProperties: false
+        summary:
+          $ref: '#/components/schemas/RunReviewHealthSummary'
+        buckets:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunReviewHealthBucket'
+        rolling:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunReviewHealthRollingPoint'
+      required:
+      - timeRange
+      - granularity
+      - summary
+      - buckets
+      - rolling
+      additionalProperties: false
+    RunReviewExpectedFileCopyRequest:
+      type: object
+      properties:
+        outputFileName:
+          type: string
+          description: Name of an existing run output file to copy into corrected artifacts.
+        expectedName:
+          description: Optional name for the copied corrected file. Defaults to the original output file name.
+          type: string
+      required:
+      - outputFileName
+      description: JSON request body for copying one run output file into the corrected artifact set.
+    RunReview:
+      type: object
+      properties:
+        id:
+          type: string
+        verdict:
+          anyOf:
+          - type: string
+            enum:
+            - correct
+            - incorrect
+          - type: 'null'
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+          - wont_fix
+        note:
+          type: string
+        correctedOutput:
+          anyOf:
+          - {}
+          - type: 'null'
+        reviewedBy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: User id of the last reviewer. Read-only; set from the authenticated user or API key creator.
+        reviewedByEmail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Email of the last reviewer. Read-only; set from the authenticated user or API key creator.
+        reviewedAt:
+          type: string
+        closedBy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: User id recorded when the review was closed. Read-only; set when status becomes closed or wont_fix.
+        closedByEmail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Email recorded when the review was closed. Read-only; set when status becomes closed or wont_fix.
+        closedAt:
+          anyOf:
+          - type: string
+          - type: 'null'
+        closedNote:
+          anyOf:
+          - type: string
+          - type: 'null'
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        corrections:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunReviewCorrection'
+      required:
+      - id
+      - verdict
+      - status
+      - note
+      - reviewedBy
+      - reviewedByEmail
+      - reviewedAt
+      - closedBy
+      - closedByEmail
+      - closedAt
+      - closedNote
+      - createdAt
+      - updatedAt
+      - corrections
+      additionalProperties: false
+    RunReviewExpectedFileMutationResponse:
+      description: Corrected file created or renamed by the request.
+      $ref: '#/components/schemas/RunFile'
+    RunReviewHealthRollingPoint:
+      type: object
+      properties:
+        at:
+          type: string
+        reviewedRuns:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs with a ranked verdict (`correct` or `incorrect`). Null verdict (nit) is excluded.
+        correctReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        reviewedCorrectness:
+          type: number
+        confidenceLower:
+          type: number
+        confidenceUpper:
+          type: number
+        totalRunsInWindow:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Total production runs in the rolling window ending at this point.
+        reviewCoverage:
+          type: number
+          description: Share of runs in the rolling window that were reviewed (0-1). Uses the same window size as rolling accuracy, applied to all runs.
+      required:
+      - at
+      - reviewedRuns
+      - correctReviews
+      - reviewedCorrectness
+      - confidenceLower
+      - confidenceUpper
+      - totalRunsInWindow
+      - reviewCoverage
+      additionalProperties: false
+    RunReviewHealthConfidence:
+      type: object
+      properties:
+        lower:
+          anyOf:
+          - type: number
+          - type: 'null'
+        upper:
+          anyOf:
+          - type: number
+          - type: 'null'
+        method:
+          type: string
+          const: wilson
+      required:
+      - lower
+      - upper
+      - method
+      additionalProperties: false
+      description: Wilson score confidence interval for reviewed correctness. Null bounds mean there are no reviewed runs in the sample.
+    RunReviewExpectedArtifacts:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunFile'
+          description: Corrected artifact files attached to the run review. Corrected JSON output lives on the review object at GET /runs/{id}/reviews.
+      required:
+      - files
+      additionalProperties: false
+    RunReviewExpectedFileUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: New corrected file name.
+      required:
+      - name
+      description: Rename one corrected file.
+    PromoteRunRequest:
+      type: object
+      properties:
+        name:
+          description: Dataset example name to create or update. Defaults to a generated name when omitted.
+          type: string
+          minLength: 1
+          maxLength: 128
+      description: Create or update a dataset example from the run input, actual output, and review corrections.
+    RunFile:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+      - name
+      additionalProperties: false
+    RunReviewExpectedFileUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          description: Corrected artifact file to upload.
+          format: binary
+        name:
+          description: Optional stored corrected file name. Defaults to the uploaded filename.
+          type: string
+      required:
+      - file
+    RunReviewDetail:
+      type: object
+      properties:
+        review:
+          anyOf:
+          - $ref: '#/components/schemas/RunReview'
+          - type: 'null'
+          description: Review metadata and corrections. Corrected files are listed separately at GET /runs/{id}/reviews/expected.
+      required:
+      - review
+      additionalProperties: false
+    RunReviewExpectedFileUpdateResponse:
+      description: Corrected file after the rename.
+      $ref: '#/components/schemas/RunFile'
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
+    RunReviewCorrection:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum:
+          - field
+          - file
+        path:
+          type: string
+          description: JSON Pointer for field corrections, or canonical artifact path for file reviews.
+        label:
+          anyOf:
+          - type: string
+          - type: 'null'
+        originalValue:
+          anyOf:
+          - {}
+          - type: 'null'
+        correctedValue:
+          anyOf:
+          - {}
+          - type: 'null'
+        note:
+          type: string
+        correctedArtifactPath:
+          anyOf:
+          - type: string
+          - type: 'null'
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+      - id
+      - kind
+      - path
+      - label
+      - note
+      - createdAt
+      - updatedAt
+      additionalProperties: false
+    ApiErrorIssue:
+      type: object
+      properties:
+        field:
+          type: string
+          description: JSON path of the offending field, or "<root>"
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
+      required:
+      - field
+      - message
+      - code
+      - severity
+      additionalProperties: false
+    RunReviewRequest:
+      type: object
+      properties:
+        verdict:
+          description: Reviewer verdict. Omit or send null for feedback without a ranking (nit). Defaults are applied client-side only; any verdict/status combination is accepted.
+          anyOf:
+          - type: string
+            enum:
+            - correct
+            - incorrect
+          - type: 'null'
+        status:
+          description: Review lifecycle. Defaults from verdict (`correct` → `closed`, otherwise `open`). Use `closed` or `wont_fix` to close an open review.
+          type: string
+          enum:
+          - open
+          - closed
+          - wont_fix
+        note:
+          description: Reviewer note.
+          anyOf:
+          - type: string
+          - type: 'null'
+        correctedOutput:
+          description: Corrected JSON output for this run. Send `null` to clear a previously stored correction.
+          anyOf:
+          - {}
+          - type: 'null'
+        corrections:
+          description: Field and file corrections. When present, replaces the entire correction set for this review. Omit to leave existing corrections unchanged.
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              kind:
+                type: string
+                enum:
+                - field
+                - file
+              path:
+                type: string
+                minLength: 1
+              label:
+                anyOf:
+                - type: string
+                - type: 'null'
+              originalValue: {}
+              correctedValue: {}
+              note:
+                anyOf:
+                - type: string
+                - type: 'null'
+              correctedArtifactPath:
+                anyOf:
+                - type: string
+                - type: 'null'
+            required:
+            - kind
+            - path
+      description: Create or replace review metadata for a run. Attribution fields (`reviewedBy`, `closedBy`, and their emails) are read-only and populated from the authenticated user or API key creator.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'API key issued from Settings → API Keys. Pass as `Authorization: Bearer <key>`.'
