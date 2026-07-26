@@ -1,0 +1,313 @@
+generated: '2026-07-19'
+method: derived
+status: candidate
+source: openapi/eigenpal-openapi-original.json
+note: "No official hosted/remote MCP server was found (2026-07-19). EigenPal does publish an agent Skill\
+  \ installable via `eigenpal skill install` for Claude Code/Cursor/Codex/etc \u2014 see skills/. The\
+  \ tools below are candidates derived one-per-operation from the OpenAPI spec."
+server:
+  name: eigenpal
+  transport: http
+  base_url: https://studio.eigenpal.com
+  auth: bearer-api-key
+tools:
+- name: auth.check
+  description: Check API key identity
+  method: GET
+  path: /api/v1/auth/check
+  source_operation: openapi/eigenpal-openapi-original.json#auth.check
+- name: automations.list
+  description: List automations
+  method: GET
+  path: /api/v1/automations
+  source_operation: openapi/eigenpal-openapi-original.json#automations.list
+- name: automations.get
+  description: Get automation
+  method: GET
+  path: /api/v1/automations/{id}
+  source_operation: openapi/eigenpal-openapi-original.json#automations.get
+- name: automations.dataset.export
+  description: Export automation dataset
+  method: GET
+  path: /api/v1/automations/{id}/dataset/export
+  source_operation: openapi/eigenpal-openapi-original.json#automations.dataset.export
+- name: automations.dataset.import
+  description: Import automation dataset
+  method: POST
+  path: /api/v1/automations/{id}/dataset/import
+  source_operation: openapi/eigenpal-openapi-original.json#automations.dataset.import
+- name: automations.evaluators.get
+  description: Get evaluators
+  method: GET
+  path: /api/v1/automations/{id}/evaluators
+  source_operation: openapi/eigenpal-openapi-original.json#automations.evaluators.get
+- name: automations.evaluators.update
+  description: Replace evaluators
+  method: PUT
+  path: /api/v1/automations/{id}/evaluators
+  source_operation: openapi/eigenpal-openapi-original.json#automations.evaluators.update
+- name: automations.examples.list
+  description: List dataset examples
+  method: GET
+  path: /api/v1/automations/{id}/examples
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.list
+- name: automations.examples.create
+  description: Create dataset example
+  method: POST
+  path: /api/v1/automations/{id}/examples
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.create
+- name: automations.examples.get
+  description: Get dataset example
+  method: GET
+  path: /api/v1/automations/{id}/examples/{exampleId}
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.get
+- name: automations.examples.update
+  description: Update dataset example
+  method: PATCH
+  path: /api/v1/automations/{id}/examples/{exampleId}
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.update
+- name: automations.examples.delete
+  description: Delete dataset example
+  method: DELETE
+  path: /api/v1/automations/{id}/examples/{exampleId}
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.delete
+- name: automations.examples.expected.files.list
+  description: List expected files
+  method: GET
+  path: /api/v1/automations/{id}/examples/{exampleId}/expected
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.expected.files.list
+- name: automations.examples.expected.files.create
+  description: Upload expected files
+  method: POST
+  path: /api/v1/automations/{id}/examples/{exampleId}/expected
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.expected.files.create
+- name: automations.examples.expected.file.get
+  description: Download expected dataset file
+  method: GET
+  path: /api/v1/automations/{id}/examples/{exampleId}/expected/{path}
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.expected.file.get
+- name: automations.examples.expected.file.update
+  description: Rename expected file
+  method: PATCH
+  path: /api/v1/automations/{id}/examples/{exampleId}/expected/{path}
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.expected.file.update
+- name: automations.examples.expected.file.delete
+  description: Delete expected file
+  method: DELETE
+  path: /api/v1/automations/{id}/examples/{exampleId}/expected/{path}
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.expected.file.delete
+- name: automations.examples.input.files.list
+  description: List input files
+  method: GET
+  path: /api/v1/automations/{id}/examples/{exampleId}/input
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.input.files.list
+- name: automations.examples.input.files.create
+  description: Upload input files
+  method: POST
+  path: /api/v1/automations/{id}/examples/{exampleId}/input
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.input.files.create
+- name: automations.examples.input.file.get
+  description: Download input file
+  method: GET
+  path: /api/v1/automations/{id}/examples/{exampleId}/input/{path}
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.input.file.get
+- name: automations.examples.input.file.update
+  description: Rename input file
+  method: PATCH
+  path: /api/v1/automations/{id}/examples/{exampleId}/input/{path}
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.input.file.update
+- name: automations.examples.input.file.delete
+  description: Delete input file
+  method: DELETE
+  path: /api/v1/automations/{id}/examples/{exampleId}/input/{path}
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.input.file.delete
+- name: automations.examples.run
+  description: Run dataset example
+  method: POST
+  path: /api/v1/automations/{id}/examples/{exampleId}/run
+  source_operation: openapi/eigenpal-openapi-original.json#automations.examples.run
+- name: automations.experiments.list
+  description: List experiments
+  method: GET
+  path: /api/v1/automations/{id}/experiments
+  source_operation: openapi/eigenpal-openapi-original.json#automations.experiments.list
+- name: automations.experiments.create
+  description: Create experiment
+  method: POST
+  path: /api/v1/automations/{id}/experiments
+  source_operation: openapi/eigenpal-openapi-original.json#automations.experiments.create
+- name: automations.experiments.get
+  description: Get experiment
+  method: GET
+  path: /api/v1/automations/{id}/experiments/{experimentId}
+  source_operation: openapi/eigenpal-openapi-original.json#automations.experiments.get
+- name: automations.experiments.cancel
+  description: Cancel experiment
+  method: POST
+  path: /api/v1/automations/{id}/experiments/{experimentId}/cancel
+  source_operation: openapi/eigenpal-openapi-original.json#automations.experiments.cancel
+- name: automations.experiments.export
+  description: Export experiment eval results
+  method: GET
+  path: /api/v1/automations/{id}/experiments/{experimentId}/export
+  source_operation: openapi/eigenpal-openapi-original.json#automations.experiments.export
+- name: automations.experiments.exportAll
+  description: Export all experiment eval results
+  method: GET
+  path: /api/v1/automations/{id}/experiments/export
+  source_operation: openapi/eigenpal-openapi-original.json#automations.experiments.exportAll
+- name: automations.experiments.createStream
+  description: Create automation experiment with NDJSON progress
+  method: POST
+  path: /api/v1/automations/{id}/experiments/stream
+  source_operation: openapi/eigenpal-openapi-original.json#automations.experiments.createStream
+- name: automations.reviews.health
+  description: Get automation review health
+  method: GET
+  path: /api/v1/automations/{id}/reviews/health
+  source_operation: openapi/eigenpal-openapi-original.json#automations.reviews.health
+- name: automations.sync
+  description: Sync automation from latest Git release
+  method: POST
+  path: /api/v1/automations/{id}/sync
+  source_operation: openapi/eigenpal-openapi-original.json#automations.sync
+- name: automations.triggers.get
+  description: Get automation triggers
+  method: GET
+  path: /api/v1/automations/{id}/triggers
+  source_operation: openapi/eigenpal-openapi-original.json#automations.triggers.get
+- name: automations.versions.list
+  description: List automation versions
+  method: GET
+  path: /api/v1/automations/{id}/versions
+  source_operation: openapi/eigenpal-openapi-original.json#automations.versions.list
+- name: experiments.resolve
+  description: Resolve experiment by id
+  method: GET
+  path: /api/v1/experiments/{experimentId}
+  source_operation: openapi/eigenpal-openapi-original.json#experiments.resolve
+- name: files.create
+  description: Upload file
+  method: POST
+  path: /api/v1/files
+  source_operation: openapi/eigenpal-openapi-original.json#files.create
+- name: files.get
+  description: Get file metadata
+  method: GET
+  path: /api/v1/files/{id}
+  source_operation: openapi/eigenpal-openapi-original.json#files.get
+- name: files.delete
+  description: Delete file
+  method: DELETE
+  path: /api/v1/files/{id}
+  source_operation: openapi/eigenpal-openapi-original.json#files.delete
+- name: files.content.get
+  description: Download file content
+  method: GET
+  path: /api/v1/files/{id}/content
+  source_operation: openapi/eigenpal-openapi-original.json#files.content.get
+- name: runs.list
+  description: List runs
+  method: GET
+  path: /api/v1/runs
+  source_operation: openapi/eigenpal-openapi-original.json#runs.list
+- name: runs.start
+  description: Start a run
+  method: POST
+  path: /api/v1/runs
+  source_operation: openapi/eigenpal-openapi-original.json#runs.start
+- name: runs.get
+  description: Get a run
+  method: GET
+  path: /api/v1/runs/{id}
+  source_operation: openapi/eigenpal-openapi-original.json#runs.get
+- name: runs.artifacts.list
+  description: List run artifacts
+  method: GET
+  path: /api/v1/runs/{id}/artifacts
+  source_operation: openapi/eigenpal-openapi-original.json#runs.artifacts.list
+- name: runs.artifacts.get
+  description: Download run artifact
+  method: GET
+  path: /api/v1/runs/{id}/artifacts/{path}
+  source_operation: openapi/eigenpal-openapi-original.json#runs.artifacts.get
+- name: runs.cancel
+  description: Cancel run
+  method: POST
+  path: /api/v1/runs/{id}/cancel
+  source_operation: openapi/eigenpal-openapi-original.json#runs.cancel
+- name: runs.events.list
+  description: List run events
+  method: GET
+  path: /api/v1/runs/{id}/events
+  source_operation: openapi/eigenpal-openapi-original.json#runs.events.list
+- name: runs.promote
+  description: Promote run to example
+  method: POST
+  path: /api/v1/runs/{id}/promote
+  source_operation: openapi/eigenpal-openapi-original.json#runs.promote
+- name: runs.rerun
+  description: Retry run
+  method: POST
+  path: /api/v1/runs/{id}/rerun
+  source_operation: openapi/eigenpal-openapi-original.json#runs.rerun
+- name: runs.reviews.get
+  description: Get run review
+  method: GET
+  path: /api/v1/runs/{id}/reviews
+  source_operation: openapi/eigenpal-openapi-original.json#runs.reviews.get
+- name: runs.reviews.update
+  description: Update run review
+  method: PUT
+  path: /api/v1/runs/{id}/reviews
+  source_operation: openapi/eigenpal-openapi-original.json#runs.reviews.update
+- name: runs.reviews.clear
+  description: Clear run review
+  method: DELETE
+  path: /api/v1/runs/{id}/reviews
+  source_operation: openapi/eigenpal-openapi-original.json#runs.reviews.clear
+- name: runs.reviews.expected.get
+  description: List corrected files
+  method: GET
+  path: /api/v1/runs/{id}/reviews/expected
+  source_operation: openapi/eigenpal-openapi-original.json#runs.reviews.expected.get
+- name: runs.reviews.expected.create
+  description: Add corrected file
+  method: POST
+  path: /api/v1/runs/{id}/reviews/expected
+  source_operation: openapi/eigenpal-openapi-original.json#runs.reviews.expected.create
+- name: runs.reviews.expected.file.get
+  description: Download corrected artifact file
+  method: GET
+  path: /api/v1/runs/{id}/reviews/expected/{filename}
+  source_operation: openapi/eigenpal-openapi-original.json#runs.reviews.expected.file.get
+- name: runs.reviews.expected.file.update
+  description: Rename corrected artifact file
+  method: PATCH
+  path: /api/v1/runs/{id}/reviews/expected/{filename}
+  source_operation: openapi/eigenpal-openapi-original.json#runs.reviews.expected.file.update
+- name: runs.reviews.expected.file.delete
+  description: Delete corrected artifact file
+  method: DELETE
+  path: /api/v1/runs/{id}/reviews/expected/{filename}
+  source_operation: openapi/eigenpal-openapi-original.json#runs.reviews.expected.file.delete
+- name: runs.scores.list
+  description: List run evaluator scores
+  method: GET
+  path: /api/v1/runs/{id}/scores
+  source_operation: openapi/eigenpal-openapi-original.json#runs.scores.list
+- name: runs.steps.list
+  description: List run steps
+  method: GET
+  path: /api/v1/runs/{id}/steps
+  source_operation: openapi/eigenpal-openapi-original.json#runs.steps.list
+- name: runs.trace.get
+  description: Get run trace
+  method: GET
+  path: /api/v1/runs/{id}/trace
+  source_operation: openapi/eigenpal-openapi-original.json#runs.trace.get
+- name: runs.usage.get
+  description: Get run usage
+  method: GET
+  path: /api/v1/runs/{id}/usage
+  source_operation: openapi/eigenpal-openapi-original.json#runs.usage.get

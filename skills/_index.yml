@@ -1,0 +1,20 @@
+generated: '2026-07-19'
+method: generated
+note: >-
+  Skills generated from the OpenAPI spec, grounded in real operationIds. EigenPal
+  also ships a first-party agent Skill installable via `eigenpal skill install`
+  (Claude Code, Cursor, Codex, Gemini CLI, Antigravity, OpenCode, Pi, Windsurf,
+  GitHub Copilot) — see https://docs.eigenpal.com/cli/skill and github.com/eigenpal/cli.
+skills:
+- file: eigenpal-run-a-workflow.md
+  name: Run an EigenPal workflow on a document
+  api: openapi/eigenpal-openapi-original.json
+  operations: [auth.check, automations.list, automations.get, files.create, runs.start, runs.get, runs.usage.get, runs.artifacts.list, runs.artifacts.get]
+- file: eigenpal-evaluate-an-automation.md
+  name: Evaluate an EigenPal automation (eval-first)
+  api: openapi/eigenpal-openapi-original.json
+  operations: [automations.examples.create, automations.evaluators.update, automations.experiments.create, automations.experiments.get, automations.experiments.export, runs.scores.list]
+- file: eigenpal-review-and-improve-runs.md
+  name: Review production runs and feed fixes back
+  api: openapi/eigenpal-openapi-original.json
+  operations: [runs.reviews.update, runs.reviews.expected.create, runs.promote, automations.reviews.health]

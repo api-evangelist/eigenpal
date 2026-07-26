@@ -1,7 +1,29 @@
 aid: eigenpal
 name: Eigenpal
-description: Eigenpal is a company surfaced as a portfolio company of y-combinator and added to the API
-  Evangelist network as a stub for enrichment. This profile is a lead awaiting the enrichment pipeline.
+description: >-
+  EigenPal is an AI document-automation platform that replaces manual document
+  reading and data entry for enterprises. Teams build directed graphs of typed
+  steps (workflows) or Git-backed agents that parse, extract, classify,
+  transform, and route data from messy scans, handwritten forms, invoices, KYC
+  documents, claims, shipping forms, contracts, and receipts. Workflows are
+  authored as plain files, evaluated against datasets with automated scoring
+  before going live, and deployed on-prem or in the cloud. A public REST API,
+  TypeScript and Python SDKs, and a CLI let developers start and monitor runs,
+  manage files and datasets, collect human reviews, run evaluation experiments,
+  and receive signed run-lifecycle webhooks.
+accessModel:
+  pricing: unknown
+  onboarding: self-serve
+  trial: false
+  try_now: false
+  public: false
+  label: Self-serve signup
+  confidence: medium
+  source:
+  - authentication
+  generated: '2026-07-22'
+  method: derived
+image: https://www.eigenpal.com/og-image.png
 url: https://raw.githubusercontent.com/api-evangelist/eigenpal/refs/heads/main/apis.yml
 x-type: company
 x-source: vc-portfolio
@@ -11,12 +33,166 @@ x-tier: stub
 x-tier-reason: portfolio-lead
 specificationVersion: '0.20'
 created: '2026-07-17'
-modified: '2026-07-17'
+modified: '2026-07-19'
 tags:
 - Company
-apis: []
+- Document Processing
+- Artificial Intelligence
+- Workflow Automation
+- Machine Learning
+- Data Extraction
+- OCR
+- Developer Tools
+- Enterprise
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
+apis:
+- aid: eigenpal:eigenpal-automations-api
+  name: Eigenpal Automations API
+  description: >-
+    Inspect runnable workflow and agent automations, their versions, triggers, and source sync state.
+  humanURL: https://docs.eigenpal.com/api-reference
+  baseURL: https://studio.eigenpal.com
+  tags:
+  - Automations
+  properties:
+  - type: OpenAPI
+    url: openapi/eigenpal-automations-api-openapi.yml
+  - type: APIReference
+    url: https://docs.eigenpal.com/api-reference
+  - type: Documentation
+    url: https://docs.eigenpal.com/
+- aid: eigenpal:eigenpal-evaluation-api
+  name: Eigenpal Evaluation API
+  description: >-
+    Manage datasets, examples, evaluators, experiment batches, evaluator scores, and run promotion workflows.
+  humanURL: https://docs.eigenpal.com/api-reference
+  baseURL: https://studio.eigenpal.com
+  tags:
+  - Evaluation
+  properties:
+  - type: OpenAPI
+    url: openapi/eigenpal-evaluation-api-openapi.yml
+  - type: APIReference
+    url: https://docs.eigenpal.com/api-reference
+  - type: Documentation
+    url: https://docs.eigenpal.com/
+- aid: eigenpal:eigenpal-files-api
+  name: Eigenpal Files API
+  description: Upload reusable files for later run or dataset use.
+  humanURL: https://docs.eigenpal.com/api-reference
+  baseURL: https://studio.eigenpal.com
+  tags:
+  - Files
+  properties:
+  - type: OpenAPI
+    url: openapi/eigenpal-files-api-openapi.yml
+  - type: APIReference
+    url: https://docs.eigenpal.com/api-reference
+  - type: Documentation
+    url: https://docs.eigenpal.com/
+- aid: eigenpal:eigenpal-metadata-api
+  name: Eigenpal Metadata API
+  description: Authenticate and inspect the current API context.
+  humanURL: https://docs.eigenpal.com/api-reference
+  baseURL: https://studio.eigenpal.com
+  tags:
+  - Metadata
+  properties:
+  - type: OpenAPI
+    url: openapi/eigenpal-metadata-api-openapi.yml
+  - type: APIReference
+    url: https://docs.eigenpal.com/api-reference
+  - type: Documentation
+    url: https://docs.eigenpal.com/
+- aid: eigenpal:eigenpal-reviews-api
+  name: Eigenpal Reviews API
+  description: Record human review verdicts, manage corrected outputs, and monitor review health.
+  humanURL: https://docs.eigenpal.com/api-reference
+  baseURL: https://studio.eigenpal.com
+  tags:
+  - Reviews
+  properties:
+  - type: OpenAPI
+    url: openapi/eigenpal-reviews-api-openapi.yml
+  - type: APIReference
+    url: https://docs.eigenpal.com/api-reference
+  - type: Documentation
+    url: https://docs.eigenpal.com/
+- aid: eigenpal:eigenpal-runs-api
+  name: Eigenpal Runs API
+  description: Start, monitor, retry, review, and debug automation runs, including artifacts.
+  humanURL: https://docs.eigenpal.com/api-reference
+  baseURL: https://studio.eigenpal.com
+  tags:
+  - Runs
+  properties:
+  - type: OpenAPI
+    url: openapi/eigenpal-runs-api-openapi.yml
+  - type: APIReference
+    url: https://docs.eigenpal.com/api-reference
+  - type: Documentation
+    url: https://docs.eigenpal.com/
+common:
+- type: AgenticAccess
+  url: agentic-access/eigenpal-agentic-access.yml
+- type: DomainSecurity
+  url: security/eigenpal-domain-security.yml
+- type: Authentication
+  url: authentication/eigenpal-authentication.yml
+- type: DeveloperPortal
+  url: https://docs.eigenpal.com/
+- type: Documentation
+  url: https://docs.eigenpal.com/
+- type: APIReference
+  url: https://docs.eigenpal.com/api-reference
+- type: GettingStarted
+  url: https://docs.eigenpal.com/guides/first-workflow
+- type: GitHubOrganization
+  url: https://github.com/eigenpal
+- type: Website
+  url: https://www.eigenpal.com/
+- type: X
+  url: https://x.com/eigenpal
+- type: Packages
+  url: packages/eigenpal-packages.yml
+- type: SDKs
+  url: packages/eigenpal-packages.yml
+- type: CLI
+  url: cli/eigenpal-cli.yml
+- type: Conventions
+  url: conventions/eigenpal-conventions.yml
+- type: Idempotency
+  url: conventions/eigenpal-conventions.yml
+- type: ErrorCatalog
+  url: errors/eigenpal-problem-types.yml
+- type: Lifecycle
+  url: lifecycle/eigenpal-lifecycle.yml
+- type: StatusPage
+  url: https://status.eigenpal.com
+- type: ChangeLog
+  url: changelog/eigenpal-changelog.yml
+- type: ChangeLog
+  url: https://docs.eigenpal.com/changelog
+- type: Conformance
+  url: conformance/eigenpal-conformance.yml
+- type: MCPServer
+  url: mcp/eigenpal-mcp.yml
+- type: Overlay
+  url: overlays/eigenpal-openapi-overlay.yaml
+- type: DataModel
+  url: data-model/eigenpal-data-model.yml
+- type: Webhooks
+  url: asyncapi/eigenpal-webhooks.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: LLMsTxt
+  url: llms/eigenpal-llms.txt
+x-enrichment:
+  date: '2026-07-19'
+  status: backfilled
+  pass: local-v1
+  note: backfilled from .gitignore signal + verified work evidence

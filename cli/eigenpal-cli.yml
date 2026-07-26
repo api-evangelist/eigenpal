@@ -1,0 +1,68 @@
+generated: '2026-07-19'
+method: searched
+source: https://docs.eigenpal.com/cli/overview
+name: eigenpal
+binary: eigenpal
+package: "@eigenpal/cli"
+repository: https://github.com/eigenpal/cli
+license: Apache-2.0
+install:
+- method: npm
+  command: npm install -g @eigenpal/cli
+auth:
+  login: eigenpal auth login
+  notes: Opens a browser to create an API key, stored in ~/.config/eigenpal/credentials.json as named profiles. One key maps to one tenant.
+  profiles:
+  - eigenpal auth list
+  - eigenpal auth use <name>
+  env: EIGENPAL_PROFILE=<name>
+command_groups:
+- name: auth
+  summary: Manage authentication profiles (login, list, use).
+- name: init
+  summary: Scaffold a new workflow or agent project (workflow.yaml, evaluators.yaml, dataset/).
+- name: workflow
+  summary: Author, validate, push, and version workflows; manage datasets, examples, evaluators, and experiments.
+  subcommands:
+  - workflow validate
+  - workflow push
+  - workflow dataset example create
+  - workflow evaluators push
+  - workflow experiment run
+  - workflow experiment watch
+  - workflow experiment results
+- name: agents
+  summary: Manage Git-backed agents — source, datasets, experiments, sessions, secrets, and releases.
+  subcommands:
+  - agents sync
+  - agents release
+  - agents dataset validate
+  - agents dataset push
+  - agents secrets list
+  - agents secrets set
+  - agents secrets unset
+- name: run
+  summary: Start a workflow or agent run (e.g. `eigenpal run workflows.parse-invoice --input-file document=invoice.pdf`).
+- name: runs
+  summary: Inspect, watch, and manage runs.
+  subcommands:
+  - runs get <run-id>
+  - runs watch <run-id>
+  - runs trace <run-id>
+- name: status
+  summary: One-shot dashboard — server, active tenant, user, key id, workflow count (--json for scripting).
+- name: skill
+  summary: Install / uninstall / list the EigenPal agent skill in supported coding agents.
+key_flows:
+- name: First workflow
+  steps:
+  - eigenpal init workflow parse-invoice
+  - eigenpal workflow validate
+  - eigenpal workflow push
+  - eigenpal run workflows.parse-invoice --input-file document=invoice.pdf
+  - eigenpal runs get <run-id>
+- name: Eval-first development
+  steps:
+  - eigenpal workflow dataset example create <workflow-id> --name acme-01 --input-json '{...}' --expected-file expected.json
+  - eigenpal workflow evaluators push <workflow-id>
+  - eigenpal workflow experiment run <workflow-id> --wait

@@ -1,0 +1,58 @@
+generated: '2026-07-19'
+method: derived
+source: openapi/eigenpal-openapi-original.json
+format: custom-json
+media_type: application/json
+envelope:
+  schema: ApiErrorEnvelope
+  fields:
+    issues: 'Array of issue objects: { field, message, code, severity }.'
+    requestId: Request id echoed via the x-request-id response header.
+    hint: Suggested fix for known error patterns (optional).
+    docsUrl: Link to relevant docs (optional).
+  issue_fields:
+    field: JSON path of the offending field, or "<root>".
+    message: Human-readable error message.
+    code: 'Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled).'
+    severity: 'error | warning'
+notes: >-
+  Every operation (all 60) returns the same ApiErrorEnvelope on 400/401/403/404/413/429/500.
+  This is a custom structured envelope, not RFC 9457 application/problem+json.
+problems:
+- status: 400
+  title: Validation error
+  description: Request shape did not match the spec.
+  remediation: Fix the offending field(s) named in issues[].field; see docsUrl / hint when present.
+- status: 401
+  title: Unauthorized
+  description: Missing or invalid API key.
+  remediation: 'Provide a valid `Authorization: Bearer <key>`; issue keys from Settings → API Keys.'
+- status: 403
+  title: Forbidden
+  description: API key lacks the required scope.
+  remediation: Use a key whose scope covers the operation; inspect the current key with GET /api/v1/auth/check.
+- status: 404
+  title: Not found
+  description: Resource not found.
+  remediation: Verify the automation / run / file / example id (or typed alias) exists and belongs to the key's tenant.
+- status: 413
+  title: Payload too large
+  description: Upload exceeded the per-request size cap.
+  remediation: Reduce the upload size or split the payload.
+- status: 429
+  title: Rate limit exceeded
+  description: Too many requests.
+  remediation: Back off and retry after the Retry-After header (seconds).
+- status: 500
+  title: Internal server error
+  description: Unexpected server-side failure.
+  remediation: Retry with backoff; report the requestId to support if it persists.
+known_issue_codes:
+- code: invalid_value
+  meaning: A field value did not pass validation.
+- code: not_found
+  meaning: A referenced resource does not exist.
+- code: api_trigger_disabled
+  meaning: The automation's API trigger is disabled.
+- code: manual_trigger_disabled
+  meaning: The automation's manual trigger is disabled.

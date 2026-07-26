@@ -1,0 +1,60 @@
+generated: '2026-07-19'
+method: derived
+source: openapi/eigenpal-openapi-original.json
+id_prefixes:
+  workflow/agent automation: aut_ / wf_
+  run: exec_
+  file: file_ (reusable upload)
+  event: whev_
+  webhook secret: whsec_
+entities:
+- name: Automation
+  description: A runnable workflow or agent (unified automation model). Has versions, triggers, a dataset,
+    evaluators, and experiments.
+- name: Run
+  description: One execution of an automation (exec_...). Has input, output, usage, trace, steps, events,
+    artifacts, scores, and an optional review.
+- name: Experiment
+  description: A batch evaluation of an automation over dataset examples, producing evaluator scores.
+- name: DatasetExample
+  description: An example input with expected output/files used by experiments; a reviewed run can be
+    promoted into one.
+- name: File
+  description: A reusable uploaded file referenceable by run inputs or dataset examples.
+- name: RunReview
+  description: Human verdict, corrections, and corrected files attached to a run.
+- name: Evaluator
+  description: YAML-defined scorer that produces automated pass/fail + weighted scores for an automation.
+relationships:
+- from: Automation
+  to: Run
+  type: has_many
+  via: automationId
+- from: Automation
+  to: Experiment
+  type: has_many
+  via: automationId
+- from: Automation
+  to: DatasetExample
+  type: has_many
+  via: examples
+- from: Automation
+  to: Evaluator
+  type: has_one
+  via: evaluators
+- from: Experiment
+  to: Run
+  type: has_many
+  via: batchId
+- from: Run
+  to: Automation
+  type: belongs_to
+  via: automationId
+- from: Run
+  to: RunReview
+  type: has_one
+  via: runId
+- from: DatasetExample
+  to: Run
+  type: has_many
+  via: exampleId

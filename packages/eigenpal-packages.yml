@@ -1,0 +1,33 @@
+generated: '2026-07-19'
+method: searched
+source: https://docs.eigenpal.com/sdks/overview
+packages:
+- language: typescript
+  registry: npm
+  name: "@eigenpal/sdk"
+  url: https://www.npmjs.com/package/@eigenpal/sdk
+  install: npm install @eigenpal/sdk
+  version: 0.10.24
+  license: Apache-2.0
+  official: true
+  repository: https://github.com/eigenpal/sdk-typescript
+  description: Official TypeScript SDK — run workflows and agents from Node, Bun, Deno, or the browser. Generated from the OpenAPI spec.
+- language: python
+  registry: pypi
+  name: eigenpal
+  url: https://pypi.org/project/eigenpal/
+  install: pip install eigenpal
+  version: 0.10.24
+  license: Apache-2.0
+  official: true
+  repository: https://github.com/eigenpal/sdk-python
+  description: Official Python SDK (Python 3.9+) — trigger workflows and agents, with wait_for_completion / run_and_wait helpers. Generated from the OpenAPI spec.
+- language: typescript
+  registry: npm
+  name: "@eigenpal/cli"
+  url: https://www.npmjs.com/package/@eigenpal/cli
+  install: npm install -g @eigenpal/cli
+  license: Apache-2.0
+  official: true
+  repository: https://github.com/eigenpal/cli
+  description: Official CLI — author, validate, push, run, and inspect workflows and Git-backed agents; manage datasets, evaluators, and API keys.

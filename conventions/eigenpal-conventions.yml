@@ -1,0 +1,67 @@
+generated: '2026-07-19'
+method: searched
+source:
+- https://docs.eigenpal.com/api-reference
+- openapi/eigenpal-openapi-original.json
+base_url: https://studio.eigenpal.com
+api_version_prefix: /api/v1
+authentication:
+  style: bearer-api-key
+  header: 'Authorization: Bearer <key>'
+  ref: authentication/eigenpal-authentication.yml
+idempotency:
+  supported: true
+  model: >-
+    The automation sync operation (POST /api/v1/automations/{id}/sync) is
+    idempotent for unchanged source state: repeated calls against the same
+    latest Git release leave the same automation registry state. Run creation
+    and rerun publish signed lifecycle webhooks only after inputs are ready, so
+    API-triggered runs never emit events for runs that fail during setup.
+  header: null
+  note: >-
+    No client-supplied Idempotency-Key header is documented; idempotency is a
+    server-side property of the sync/reconcile operation rather than a
+    replay-key contract. Webhook delivery is at-least-once — receivers must
+    deduplicate by the event `id`.
+pagination:
+  style: cursor+offset
+  params:
+    cursor: Opaque cursor for the next page (runs.list).
+    offset: Numeric offset (automations.list, runs.list).
+    limit: Page size.
+  response_fields:
+    nextCursor: Cursor for the next page, or null when exhausted (RunList).
+  notes: runs.list also supports rich filtering (status, trigger, type, date ranges, review status) plus sort/order.
+expansion:
+  supported: true
+  param: expand
+  notes: 'GET /api/v1/runs/{id}?expand=input,usage,execution,debug includes detailed sub-objects; expand=execution embeds review and expected artifacts.'
+request_tracing:
+  request_id_header: x-request-id
+  notes: The request id is echoed on the x-request-id response header and mirrored into the error envelope `requestId` field.
+versioning:
+  scheme: uri-path
+  current: v1
+  platform_versioning: Unified platform version (Studio, API, CLI, SDKs ship together); see changelog.
+  ref: lifecycle/eigenpal-lifecycle.yml
+error_envelope:
+  format: custom-json
+  media_type: application/json
+  shape:
+    issues: Array of { field, message, code, severity } issue objects.
+    requestId: Request id echoed via the x-request-id header.
+    hint: Suggested fix for known error patterns.
+    docsUrl: Link to relevant docs.
+  ref: errors/eigenpal-problem-types.yml
+rate_limiting:
+  signal: Retry-After
+  notes: '429 Rate limit exceeded responses carry a Retry-After header (seconds until the next request may succeed).'
+webhooks:
+  supported: true
+  signing: HMAC-SHA256 over `<webhook-id>.<webhook-timestamp>.<raw body>`, headers webhook-id / webhook-timestamp / webhook-signature (v1,<hex>).
+  ref: asyncapi/eigenpal-webhooks.yml
+file_uploads:
+  media_type: multipart/form-data
+  notes: SDKs send multipart/form-data for file fields; no base64 needed. Per-request size cap enforced (413 Payload too large).
+async_execution:
+  model: Run creation returns a run id (exec_...); workers execute asynchronously. Poll GET /api/v1/runs/{id}, subscribe to webhooks, or stream NDJSON for experiments.

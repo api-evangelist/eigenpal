@@ -1,0 +1,41 @@
+generated: '2026-07-19'
+method: searched
+source: https://docs.eigenpal.com/guides/outbound-webhooks
+spec_type: Webhooks
+note: >-
+  EigenPal publishes outbound webhooks (documented, no machine-readable AsyncAPI
+  document). Endpoints are configured per organization in Studio → Webhooks.
+  Delivery is asynchronous and at-least-once; receivers must deduplicate by
+  event id and return 2xx quickly.
+transport: https-post
+events:
+- type: run.created
+  description: A top-level workflow or agent run was created. Contains the run in its initial status; omits previousStatus / currentStatus.
+- type: run.status_changed
+  description: A top-level run moved from one persisted status to another. Carries previousStatus and currentStatus.
+notes:
+- Runs created internally by an action.invoke-workflow step do not emit webhook events.
+- When available, the public run output is included; if the event would exceed the payload limit, output is omitted and outputOmitted is true — refetch via GET /api/v1/runs/{id}.
+envelope:
+  fields:
+    id: Stable event id (whev_...), used for deduplication.
+    type: run.created | run.status_changed
+    apiVersion: Envelope version (e.g. 2026-07-01).
+    createdAt: ISO 8601 timestamp.
+    test: Boolean — true for Send-test deliveries.
+    data: '{ run: { id (exec_...), type, automationId, status, triggerType }, previousStatus?, currentStatus? }'
+signing:
+  scheme: standard-webhooks
+  algorithm: HMAC-SHA256
+  signed_message: '<webhook-id>.<webhook-timestamp>.<raw request body>'
+  headers:
+    webhook-id: Event id.
+    webhook-timestamp: Unix seconds; reject if age > 300s.
+    webhook-signature: 'Format v1,<hex digest>.'
+  secret_prefix: whsec_
+  note: Verify against raw request bytes (do not reparse/reserialize). Secret rotation is not yet available — replace the endpoint to rotate.
+delivery:
+  guarantee: at-least-once
+  retries: Network failures, timeouts, 408, 425, 429, and 5xx are retried with bounded backoff; other 4xx ends automatic delivery.
+  ordering: Not guaranteed — use previousStatus / currentStatus / createdAt rather than delivery sequence.
+  redelivery: Manual redelivery preserves event id and payload.

@@ -1,0 +1,24 @@
+generated: '2026-07-19'
+method: searched
+note: Probed the API host (studio.eigenpal.com), the marketing host (eigenpal.com / www), and the docs host on 2026-07-19. No /.well-known discovery documents are published — a valid, expected result for an early-stage bearer-key API.
+hosts:
+- host: https://studio.eigenpal.com
+  documents:
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /.well-known/openid-configuration
+    status: 404
+  - path: /.well-known/oauth-authorization-server
+    status: 404
+  - path: /.well-known/api-catalog
+    status: 404
+  - path: /.well-known/ai-plugin.json
+    status: 404
+- host: https://www.eigenpal.com
+  documents:
+  - path: /.well-known/security.txt
+    status: 404
+- host: https://docs.eigenpal.com
+  documents:
+  - path: /.well-known/security.txt
+    status: 404

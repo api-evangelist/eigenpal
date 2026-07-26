@@ -1,0 +1,43 @@
+generated: '2026-07-19'
+method: searched
+source: https://docs.eigenpal.com/changelog
+scheme: semver-platform
+model: Unified platform version — each release updates Studio, public API, infrastructure, and (when applicable) CLI and SDKs together.
+current_version: '0.10.24'
+entries:
+- version: '0.10.24'
+  date: '2026-07-15'
+  breaking: false
+  highlights:
+  - Agent runs graded by evaluators now record a weighted score and pass/fail result.
+  - Workflow email addresses are unique org-wide with clearer conflict messages (409 instead of 500).
+  - ai.extract grounded:true fails loudly on misconfiguration instead of silently producing no grounding.
+  - Self-hosted deployments support corporate SSO via a redirect-and-token flow with mutual TLS and directory-group role mapping.
+  - 'API: sync-after-release no longer 500s; single-experiment results export fixed; duplicate email trigger returns 409.'
+- version: '0.10.23'
+  date: '2026-07-15'
+  breaking: false
+  highlights:
+  - Internal improvements.
+- version: '0.10.22'
+  date: '2026-07-14'
+  breaking: false
+  highlights:
+  - Organization members can configure, test, and manage outbound webhooks from Studio.
+- version: '0.10.21'
+  date: '2026-07-14'
+  breaking: false
+  highlights:
+  - Outbound webhooks launched — signed delivery, custom headers, retry history, testing, and manual redelivery.
+  - 'API: run creation/rerun publish signed lifecycle webhooks only after inputs are ready.'
+- version: '0.10.20'
+  date: '2026-07-12'
+  breaking: false
+  highlights:
+  - Configurable automatic retries at the workflow level or per HTTP GET/HEAD and Website Reader step.
+  - Durable, step-scoped retry of replay-safe network steps with bounded backoff.
+- version: '0.10.19'
+  date: '2026-07-09'
+  breaking: true
+  highlights:
+  - 'Breaking: workflow composition unified on action.invoke-workflow; reusable blocks (control.block, kind: block) removed — migrate to inline invoke.'

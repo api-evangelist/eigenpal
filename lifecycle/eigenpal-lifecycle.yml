@@ -1,0 +1,28 @@
+generated: '2026-07-19'
+method: searched
+source:
+- https://docs.eigenpal.com/changelog
+- https://status.eigenpal.com
+- openapi/eigenpal-openapi-original.json
+versioning:
+  scheme: uri-path
+  current: v1
+  platform_version: '0.10.24'
+  model: >-
+    EigenPal ships on a unified platform version. Each production release
+    updates Studio, the public API, infrastructure, and (when applicable) the
+    CLI and SDKs together. The REST surface is versioned in the URI path
+    (/api/v1).
+  changelog: https://docs.eigenpal.com/changelog
+deprecation:
+  policy_url: null
+  sunset_header: false
+  note: >-
+    No formal deprecation policy or RFC 8594 Sunset/Deprecation header support
+    is documented. Breaking changes are announced in the changelog (e.g. 0.10.19
+    removed reusable blocks in favor of action.invoke-workflow).
+sla:
+  url: null
+  uptime_target: null
+status_page: https://status.eigenpal.com
+deprecated_operations: []

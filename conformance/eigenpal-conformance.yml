@@ -1,0 +1,39 @@
+generated: '2026-07-19'
+method: derived
+source:
+- openapi/eigenpal-openapi-original.json
+- https://docs.eigenpal.com/guides/outbound-webhooks
+standards:
+- id: rest
+  conforms: true
+  evidence: Resource-oriented HTTP+JSON API under /api/v1 with standard verbs and status codes.
+- id: openapi-3.1
+  conforms: true
+  evidence: Published OpenAPI 3.1.0 document at docs.eigenpal.com/api-reference/openapi.json.
+- id: standard-webhooks
+  conforms: true
+  evidence: >-
+    Outbound webhooks use the Standard Webhooks header set (webhook-id,
+    webhook-timestamp, webhook-signature formatted v1,<hex>) with HMAC-SHA256
+    over "<id>.<timestamp>.<raw body>".
+- id: oauth2
+  conforms: false
+  evidence: Public API uses a Bearer API key (http bearer), not OAuth2 flows.
+- id: oidc
+  conforms: false
+  evidence: Public API has no OpenID Connect; self-hosted deployments offer separate corporate SSO (OIDC or redirect-and-token) for dashboard sign-in only.
+- id: rfc9457-problem-details
+  conforms: false
+  evidence: Errors use a custom ApiErrorEnvelope (application/json), not application/problem+json.
+- id: rfc8594-sunset
+  conforms: false
+  evidence: No Sunset/Deprecation header support documented.
+- id: rfc9116-security-txt
+  conforms: false
+  evidence: No /.well-known/security.txt published (probed 2026-07-19).
+- id: cursor-pagination
+  conforms: true
+  evidence: runs.list exposes cursor + nextCursor; automations.list and runs.list support offset/limit.
+- id: idempotency
+  conforms: partial
+  evidence: automations.sync is idempotent for unchanged source state; no client Idempotency-Key contract on writes.

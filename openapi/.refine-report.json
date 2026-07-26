@@ -1,0 +1,24 @@
+{
+  "provider": "eigenpal",
+  "sources": [
+    "eigenpal-automations-api-openapi.yml",
+    "eigenpal-evaluation-api-openapi.yml",
+    "eigenpal-files-api-openapi.yml",
+    "eigenpal-metadata-api-openapi.yml",
+    "eigenpal-reviews-api-openapi.yml",
+    "eigenpal-runs-api-openapi.yml"
+  ],
+  "outputs": [
+    "eigenpal-automations-api-openapi.yml",
+    "eigenpal-evaluation-api-openapi.yml",
+    "eigenpal-files-api-openapi.yml",
+    "eigenpal-metadata-api-openapi.yml",
+    "eigenpal-reviews-api-openapi.yml",
+    "eigenpal-runs-api-openapi.yml"
+  ],
+  "archived": [],
+  "errors": [],
+  "warnings": [],
+  "notes": [],
+  "skipped": []
+}
