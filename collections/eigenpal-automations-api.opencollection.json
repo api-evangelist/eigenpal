@@ -1,0 +1,137 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Eigenpal Automations API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Automations",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List automations",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations",
+            "params": [
+              {
+                "name": "search",
+                "value": "",
+                "type": "query",
+                "description": "Substring match against slug, name, or description"
+              },
+              {
+                "name": "type",
+                "value": "",
+                "type": "query",
+                "description": "Filter by implementation type"
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Maximum number of automations to return."
+              },
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "Zero-based offset for paging through automations."
+              }
+            ]
+          },
+          "docs": "Returns workflows and agents through one runnable automation collection. Use `type` to narrow to workflows or agents, and `search` to find automations by slug, name, or description."
+        },
+        {
+          "info": {
+            "name": "Get automation",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Workflow id, agent id, or typed alias like workflows.slug / agents.slug"
+              }
+            ]
+          },
+          "docs": "Get one runnable workflow or agent automation by id or typed alias."
+        },
+        {
+          "info": {
+            "name": "Sync automation from latest Git release",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/sync",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation target to sync, such as agents.invoice-agent or workflows.extract. Do not include a version; sync always uses the latest Git release."
+              }
+            ]
+          },
+          "docs": "Reconciles automation registry metadata and trigger projections from the latest Git source release. This operation is idempotent for unchanged source state: repeated calls against the same latest release leave the same automation registry state and may repeat the same warnings. Requires a Bearer API token for the organization and a user-backed API key. It does not publish source; it reads the already-published latest release manifest. Versioned targets are rejected with 400, missing organization"
+        },
+        {
+          "info": {
+            "name": "Get automation triggers",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/triggers",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Workflow id, agent id, or typed alias like workflows.slug / agents.slug"
+              }
+            ]
+          },
+          "docs": "Read trigger state for a workflow or agent automation. Trigger mutation is not public v1."
+        },
+        {
+          "info": {
+            "name": "List automation versions",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/versions",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Workflow id, agent id, or typed alias like workflows.slug / agents.slug"
+              }
+            ]
+          },
+          "docs": "List versions for a workflow or agent automation through one read-only route."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

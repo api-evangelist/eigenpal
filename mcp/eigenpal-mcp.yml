@@ -2,9 +2,9 @@ generated: '2026-07-19'
 method: derived
 status: candidate
 source: openapi/eigenpal-openapi-original.json
-note: "No official hosted/remote MCP server was found (2026-07-19). EigenPal does publish an agent Skill\
-  \ installable via `eigenpal skill install` for Claude Code/Cursor/Codex/etc \u2014 see skills/. The\
-  \ tools below are candidates derived one-per-operation from the OpenAPI spec."
+note: No official hosted/remote MCP server was found (2026-07-19). EigenPal does publish an agent Skill
+  installable via `eigenpal skill install` for Claude Code/Cursor/Codex/etc — see skills/. The tools below
+  are candidates derived one-per-operation from the OpenAPI spec.
 server:
   name: eigenpal
   transport: http
@@ -311,3 +311,9 @@ tools:
   method: GET
   path: /api/v1/runs/{id}/usage
   source_operation: openapi/eigenpal-openapi-original.json#runs.usage.get
+deployment:
+  mode: none
+  verified: derived
+  tools: 60
+  checked: '2026-08-12'
+  source: catalog MCP census

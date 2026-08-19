@@ -1,0 +1,35 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Eigenpal Automations Metadata API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Metadata",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Check API key identity",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/auth/check"
+          },
+          "docs": "Return the tenant, user, API key, and scope represented by the current API key."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

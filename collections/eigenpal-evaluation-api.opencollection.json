@@ -1,0 +1,805 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Eigenpal Automations Evaluation API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Evaluation",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Export automation dataset",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/dataset/export",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleIds",
+                "value": "",
+                "type": "query",
+                "description": "Optional comma-separated dataset example ids to export. Omit to export the full dataset."
+              }
+            ]
+          },
+          "docs": "Download the automation dataset as a ZIP archive. The archive uses the examples/<name>/input and examples/<name>/expected folder convention, so it can be re-imported into another automation or environment."
+        },
+        {
+          "info": {
+            "name": "Import automation dataset",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/dataset/import",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": []
+            }
+          },
+          "docs": "Import a dataset ZIP archive using the examples/<name>/input and examples/<name>/expected folder convention. Use `mode=append` for additive imports or `mode=replace` to replace the dataset."
+        },
+        {
+          "info": {
+            "name": "Get evaluators",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/evaluators",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              }
+            ]
+          },
+          "docs": "Fetch the evaluator configuration for an automation. Evaluators produce automated `score` results, which are separate from human review verdicts."
+        },
+        {
+          "info": {
+            "name": "Replace evaluators",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/evaluators",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Replace the evaluator YAML for an automation. The submitted YAML is validated before it becomes the source for future experiment scores."
+        },
+        {
+          "info": {
+            "name": "List dataset examples",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias, such as `workflows.slug` or `agents.slug`."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Maximum number of examples to return."
+              },
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "Zero-based offset for paging through examples."
+              }
+            ]
+          },
+          "docs": "List dataset examples for one automation. Examples contain input, expected output, expected files, metadata, and optional overrides used by evaluation runs."
+        },
+        {
+          "info": {
+            "name": "Create dataset example",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias, such as `workflows.slug` or `agents.slug`."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Create one dataset example from JSON fields. Use dataset import for archive-based uploads and file-bearing examples."
+        },
+        {
+          "info": {
+            "name": "Get dataset example",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id. Agent examples may use deterministic name-derived ids returned by list/create responses."
+              }
+            ]
+          },
+          "docs": "Fetch one dataset example, including input, expected output, expected files, metadata, and overrides."
+        },
+        {
+          "info": {
+            "name": "Update dataset example",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id. Agent examples may use deterministic name-derived ids returned by list/create responses."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Partially update a dataset example. Omitted fields are preserved; pass null for nullable fields to clear them."
+        },
+        {
+          "info": {
+            "name": "Delete dataset example",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id. Agent examples may use deterministic name-derived ids returned by list/create responses."
+              }
+            ]
+          },
+          "docs": "Delete one dataset example from the automation dataset. This removes the example from future experiments."
+        },
+        {
+          "info": {
+            "name": "List expected files",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId/expected",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id."
+              }
+            ]
+          },
+          "docs": "List files stored under the expected folder for one automation dataset example."
+        },
+        {
+          "info": {
+            "name": "Upload expected files",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId/expected",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id."
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": []
+            }
+          },
+          "docs": "Upload one or more files into the expected folder for an automation dataset example. Use `$file` references such as `expected/result.pdf` from expected JSON to compare file outputs."
+        },
+        {
+          "info": {
+            "name": "Download expected dataset file",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId/expected/:path",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id."
+              },
+              {
+                "name": "path",
+                "value": "",
+                "type": "path",
+                "description": "Path under the example expected folder."
+              }
+            ]
+          },
+          "docs": "Download one expected file attached to an automation dataset example."
+        },
+        {
+          "info": {
+            "name": "Rename expected file",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId/expected/:path",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id."
+              },
+              {
+                "name": "path",
+                "value": "",
+                "type": "path",
+                "description": "Path under the example expected folder."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Rename one expected file attached to an automation dataset example. The parent folder is preserved."
+        },
+        {
+          "info": {
+            "name": "Delete expected file",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId/expected/:path",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id."
+              },
+              {
+                "name": "path",
+                "value": "",
+                "type": "path",
+                "description": "Path under the example expected folder."
+              }
+            ]
+          },
+          "docs": "Delete one file from an automation dataset example expected folder."
+        },
+        {
+          "info": {
+            "name": "List input files",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId/input",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id."
+              }
+            ]
+          },
+          "docs": "List files stored under the input folder for one automation dataset example."
+        },
+        {
+          "info": {
+            "name": "Upload input files",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId/input",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id."
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": []
+            }
+          },
+          "docs": "Upload one or more files into the input folder for an automation dataset example. Use `$file` references such as `input/invoice.pdf` from the example input JSON to consume them."
+        },
+        {
+          "info": {
+            "name": "Download input file",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId/input/:path",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id."
+              },
+              {
+                "name": "path",
+                "value": "",
+                "type": "path",
+                "description": "Slash-delimited path under the example input folder."
+              }
+            ]
+          },
+          "docs": "Download one file from an automation dataset example input folder."
+        },
+        {
+          "info": {
+            "name": "Rename input file",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId/input/:path",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id."
+              },
+              {
+                "name": "path",
+                "value": "",
+                "type": "path",
+                "description": "Slash-delimited path under the example input folder."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Rename one input file attached to an automation dataset example. The parent folder is preserved."
+        },
+        {
+          "info": {
+            "name": "Delete input file",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId/input/:path",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id."
+              },
+              {
+                "name": "path",
+                "value": "",
+                "type": "path",
+                "description": "Slash-delimited path under the example input folder."
+              }
+            ]
+          },
+          "docs": "Delete one file from an automation dataset example input folder."
+        },
+        {
+          "info": {
+            "name": "Run dataset example",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/examples/:exampleId/run",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "path",
+                "description": "Dataset example id to run."
+              }
+            ]
+          },
+          "docs": "Start an asynchronous run using the input from one dataset example. Poll `GET /api/v1/runs/{id}` for completion and use run scores or review endpoints to review the result."
+        },
+        {
+          "info": {
+            "name": "List experiments",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/experiments",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Maximum number of experiment batches to return."
+              },
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "Zero-based offset for paging through experiment batches."
+              },
+              {
+                "name": "fromDate",
+                "value": "",
+                "type": "query",
+                "description": "Filter to experiment batches created at or after this date or relative date."
+              },
+              {
+                "name": "toDate",
+                "value": "",
+                "type": "query",
+                "description": "Filter to experiment batches created at or before this date or relative date."
+              }
+            ]
+          },
+          "docs": "List experiment batches for one automation. Each experiment runs selected dataset examples and records automated evaluator scores."
+        },
+        {
+          "info": {
+            "name": "Create experiment",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/experiments",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Start an asynchronous experiment batch for one automation. Omit `examples` to run the full dataset, or pass specific example ids to run a subset."
+        },
+        {
+          "info": {
+            "name": "Get experiment",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/experiments/:experimentId",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "experimentId",
+                "value": "",
+                "type": "path",
+                "description": "Experiment batch id."
+              }
+            ]
+          },
+          "docs": "Fetch one experiment batch with its run summaries and evaluator results grouped by run id."
+        },
+        {
+          "info": {
+            "name": "Cancel experiment",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/experiments/:experimentId/cancel",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Automation id or typed alias."
+              },
+              {
+                "name": "experimentId",
+                "value": "",
+                "type": "path",
+                "description": "Experiment batch id."
+              }
+            ]
+          },
+          "docs": "Request cancellation for an experiment batch. Already-completed runs remain recorded; queued or running work is cancelled when possible."
+        },
+        {
+          "info": {
+            "name": "Export experiment eval results",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/experiments/:experimentId/export",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "experimentId",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "format",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "includeTrace",
+                "value": "",
+                "type": "query"
+              }
+            ]
+          },
+          "docs": "Download eval result rows for a single experiment batch as CSV or JSON."
+        },
+        {
+          "info": {
+            "name": "Export all experiment eval results",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/experiments/export",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "format",
+                "value": "",
+                "type": "query"
+              }
+            ]
+          },
+          "docs": "Download every eval result row for an automation as CSV or JSON."
+        },
+        {
+          "info": {
+            "name": "Create automation experiment with NDJSON progress",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://studio.eigenpal.com/api/v1/automations/:id/experiments/stream",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Starts a batch eval experiment for workflow or agent automations and streams per-run completion events as NDJSON."
+        },
+        {
+          "info": {
+            "name": "Resolve experiment by id",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/experiments/:experimentId",
+            "params": [
+              {
+                "name": "experimentId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Returns the owning automation for an experiment batch id. Used when callers only know the experiment id."
+        },
+        {
+          "info": {
+            "name": "List run evaluator scores",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/runs/:id/scores",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Run id."
+              }
+            ]
+          },
+          "docs": "List automated evaluator results for one run. Use `score` for evaluator output and run reviews for human verdicts."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

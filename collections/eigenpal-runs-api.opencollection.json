@@ -1,0 +1,457 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Eigenpal Automations Runs API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Runs",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List runs",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/runs",
+            "params": [
+              {
+                "name": "type",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "source",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "status",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "trigger",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "triggeredBy",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "sourceRef",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "batchId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "exampleId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "exampleIdContains",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "from",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "to",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "createdAfter",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "createdBefore",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "completedAfter",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "completedBefore",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "ids",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "experiments",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "sort",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "order",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "reviewStatus",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "reviewVerdict",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "hasReview",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "noReview",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "hasCorrections",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "reviewNoteContains",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "reviewCreatedAfter",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "reviewCreatedBefore",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "reviewUpdatedAfter",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "reviewUpdatedBefore",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "reviewClosedAfter",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "reviewClosedBefore",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "sinceLastClosed",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "sampleRate",
+                "value": "",
+                "type": "query",
+                "description": "Keep runs whose `sampleRank` is below this threshold (0–1). Pages may return fewer than `limit` rows when filtered."
+              }
+            ]
+          },
+          "docs": "List workflow and agent runs with cursor pagination."
+        },
+        {
+          "info": {
+            "name": "Start a run",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://studio.eigenpal.com/api/v1/runs",
+            "params": [
+              {
+                "name": "version",
+                "value": "",
+                "type": "query",
+                "description": "Release or git ref. Defaults to latest."
+              },
+              {
+                "name": "wait_for_completion",
+                "value": "",
+                "type": "query",
+                "description": "Seconds to wait before returning (max 600). Omit for async."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Start a run. Send JSON or multipart/form-data."
+        },
+        {
+          "info": {
+            "name": "Get a run",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/runs/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Run id"
+              },
+              {
+                "name": "expand",
+                "value": "",
+                "type": "query",
+                "description": "Optional sections: `input`, `usage`, `execution`, `debug`. Terminal runs always include top-level output, files, and error."
+              }
+            ]
+          },
+          "docs": "Fetch one run by id. By default this returns core metadata plus terminal output/error fields. Pass `?expand=input,usage,execution,debug` to include detailed sub-objects; `expand=execution` is also where embedded review and expected artifacts appear."
+        },
+        {
+          "info": {
+            "name": "List run artifacts",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/runs/:id/artifacts",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Run id"
+              },
+              {
+                "name": "zip",
+                "value": "",
+                "type": "query",
+                "description": "When `1`, download output files as a ZIP instead of listing paths. Does not include trace, scores, or input — use `GET /runs/{id}/scores` and `GET /runs/{id}/trace` for those."
+              },
+              {
+                "name": "bundle",
+                "value": "",
+                "type": "query",
+                "description": "With `zip=1`, use `review` to download a ZIP with `output/` and `expected/` folders (corrected review artifacts)."
+              },
+              {
+                "name": "token",
+                "value": "",
+                "type": "query",
+                "description": "Signed email download token (zip only; no Bearer required)."
+              }
+            ]
+          },
+          "docs": "Returns a JSON list of downloadable artifact paths for a run. Pass `zip=1` to switch the response to a ZIP download containing output files."
+        },
+        {
+          "info": {
+            "name": "Download run artifact",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/runs/:id/artifacts/:path",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "path",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Download one artifact by path."
+        },
+        {
+          "info": {
+            "name": "Cancel run",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://studio.eigenpal.com/api/v1/runs/:id/cancel",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Cancel a queued run or request cancellation of an in-flight run."
+        },
+        {
+          "info": {
+            "name": "List run events",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/runs/:id/events",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Run id"
+              }
+            ]
+          },
+          "docs": "List a stable chronological lifecycle timeline for a run."
+        },
+        {
+          "info": {
+            "name": "Retry run",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://studio.eigenpal.com/api/v1/runs/:id/rerun",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Source run id to retry."
+              },
+              {
+                "name": "version",
+                "value": "",
+                "type": "query",
+                "description": "Version for the new run. `original` pins the source run. Defaults to latest."
+              },
+              {
+                "name": "wait_for_completion",
+                "value": "",
+                "type": "query",
+                "description": "Seconds to wait before returning (max 600). Omit for async."
+              }
+            ]
+          },
+          "docs": "Start a new run using the source run input. By default the retry uses the latest automation version; pass `version=original` to pin the same source version as the original run."
+        },
+        {
+          "info": {
+            "name": "List run steps",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/runs/:id/steps",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Run id"
+              }
+            ]
+          },
+          "docs": "List workflow steps or an agent-compatible execution step summary for a run."
+        },
+        {
+          "info": {
+            "name": "Get run trace",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/runs/:id/trace",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Run id."
+              }
+            ]
+          },
+          "docs": "Return low-level execution trace events for debugging one run. Workflow runs expose observability phases or step records; agent runs expose parsed trace.jsonl events. The shape is intentionally extensible, but common fields are documented."
+        },
+        {
+          "info": {
+            "name": "Get run usage",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/runs/:id/usage",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Run id"
+              }
+            ]
+          },
+          "docs": "Get token, credit, duration, and execution usage for a run."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

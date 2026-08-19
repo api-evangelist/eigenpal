@@ -1,0 +1,96 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Eigenpal Automations Files API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Files",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Upload file",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://studio.eigenpal.com/api/v1/files",
+            "body": {
+              "type": "multipart-form",
+              "data": []
+            }
+          },
+          "docs": "Upload a reusable file that can later be referenced by run inputs or dataset examples."
+        },
+        {
+          "info": {
+            "name": "Get file metadata",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/files/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "File id"
+              }
+            ]
+          },
+          "docs": "Get metadata for a reusable uploaded file."
+        },
+        {
+          "info": {
+            "name": "Delete file",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "https://studio.eigenpal.com/api/v1/files/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "File id"
+              }
+            ]
+          },
+          "docs": "Delete a reusable uploaded file. Historical run and dataset snapshots are separate artifacts."
+        },
+        {
+          "info": {
+            "name": "Download file content",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://studio.eigenpal.com/api/v1/files/:id/content",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "File id"
+              }
+            ]
+          },
+          "docs": "Download bytes for a reusable uploaded file."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}
