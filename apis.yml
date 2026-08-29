@@ -11,6 +11,17 @@ description: >-
   TypeScript and Python SDKs, and a CLI let developers start and monitor runs,
   manage files and datasets, collect human reviews, run evaluation experiments,
   and receive signed run-lifecycle webhooks.
+deliveryModel:
+  model: unknown
+  open_source: false
+  commercial: false
+  callable_host: true
+  label: Delivery model not determined — needs a product licence on record
+  confidence: low
+  source:
+  - openapi
+  generated: '2026-08-28'
+  method: derived
 accessModel:
   pricing: unknown
   onboarding: self-serve
