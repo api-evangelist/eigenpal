@@ -79,6 +79,8 @@ apis:
   humanURL: https://docs.eigenpal.com/api-reference
   baseURL: https://studio.eigenpal.com
   tags:
+  - Automation
+  tags_raw:
   - Automations
   properties:
   - type: OpenAPI
