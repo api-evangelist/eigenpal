@@ -1,6 +1,6 @@
-openapi: 3.1.0
+openapi: 3.2.0
 info:
-  title: Eigenpal Automations Runs API
+  title: Eigenpal Runs API
   version: 1.0.0
   description: Public REST API for inspecting automations, starting and monitoring runs, managing files, collecting human reviews, and running evaluations.
   contact:
@@ -1006,99 +1006,6 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
-    RunsListResponse:
-      type: object
-      properties:
-        runs:
-          type: array
-          items:
-            $ref: '#/components/schemas/RunListItem'
-        nextCursor:
-          anyOf:
-          - type: string
-          - type: 'null'
-      required:
-      - runs
-      - nextCursor
-      additionalProperties: false
-    RunTraceResponse:
-      type: object
-      properties:
-        events:
-          type: array
-          items:
-            $ref: '#/components/schemas/RunTraceEvent'
-          description: Chronological trace events. Workflow runs return observability phases or step executions; agent runs return parsed trace.jsonl events.
-      required:
-      - events
-      additionalProperties: false
-    RunInput:
-      type: object
-      properties:
-        args:
-          description: Input arguments the run was started with.
-        files:
-          description: Uploaded input files (agent runs only).
-          type: array
-          items:
-            $ref: '#/components/schemas/RunFile'
-        metadata:
-          description: Caller-supplied run metadata, if any.
-      required:
-      - args
-      additionalProperties: false
-    RunUsage:
-      type: object
-      properties:
-        tokens:
-          type: object
-          properties:
-            input:
-              anyOf:
-              - type: number
-              - type: 'null'
-            output:
-              anyOf:
-              - type: number
-              - type: 'null'
-            cacheRead:
-              anyOf:
-              - type: number
-              - type: 'null'
-            cacheWrite:
-              anyOf:
-              - type: number
-              - type: 'null'
-          required:
-          - input
-          - output
-          - cacheRead
-          - cacheWrite
-          additionalProperties: false
-        creditsCharged:
-          anyOf:
-          - type: number
-          - type: 'null'
-        durationMs:
-          anyOf:
-          - type: number
-          - type: 'null'
-        llmCallCount:
-          description: LLM call count (workflow runs only).
-          type: number
-        ocrPagesProcessed:
-          description: OCR pages processed (workflow runs only).
-          type: number
-        agentTurns:
-          description: Agent conversation turns (agent runs only).
-          anyOf:
-          - type: number
-          - type: 'null'
-      required:
-      - tokens
-      - creditsCharged
-      - durationMs
-      additionalProperties: false
     RunCancelResponse:
       type: object
       properties:
@@ -1143,6 +1050,16 @@ components:
       - finished
       - execution
       - cancellation
+      additionalProperties: false
+    RunUsageResponse:
+      type: object
+      properties:
+        usage:
+          anyOf:
+          - $ref: '#/components/schemas/RunUsage'
+          - type: 'null'
+      required:
+      - usage
       additionalProperties: false
     RunStartBody:
       type: object
@@ -1258,14 +1175,25 @@ components:
       required:
       - target
       description: Run envelope. Declare provenance with the `X-Eigenpal-Trigger` header (`api` or `cli`). Legacy 0.5.12 body shapes remain accepted.
-    RunStepsResponse:
+    RunAccepted:
       type: object
       properties:
-        steps:
-          type: array
-          items: {}
+        id:
+          type: string
+        type:
+          type: string
+          enum:
+          - workflow
+          - agent
+        finished:
+          type: boolean
+          const: false
+        source:
+          $ref: '#/components/schemas/RunSource'
       required:
-      - steps
+      - id
+      - type
+      - finished
       additionalProperties: false
     RunArtifactsResponse:
       type: object
@@ -1296,44 +1224,47 @@ components:
       - target
       additionalProperties:
         description: Dynamic binary fields like `files.<fieldName>`.
-    RunError:
-      anyOf:
-      - type: string
-      - type: 'null'
-    RunStartResponse:
-      anyOf:
-      - $ref: '#/components/schemas/RunAccepted'
-      - $ref: '#/components/schemas/Run'
-    RunTrigger:
+    RunListItem:
       type: object
       properties:
+        id:
+          type: string
         type:
-          anyOf:
-          - type: string
-          - type: 'null'
-        by:
-          anyOf:
-          - type: object
-            properties:
-              id:
-                type: string
-              name:
-                anyOf:
-                - type: string
-                - type: 'null'
-              email:
-                type: string
-            required:
-            - id
-            - name
-            - email
-            additionalProperties: false
-          - type: 'null'
-        email:
-          description: Inbound email trigger details (agent runs, `expand=input` not required).
+          type: string
+          enum:
+          - workflow
+          - agent
+        finished:
+          type: boolean
+          description: True when the run has reached a terminal status.
+        sampleRank:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Deterministic pseudo-random rank in [0, 1) for this run within the tenant. Use with a sample rate threshold to review a stable subset.
+        timing:
+          $ref: '#/components/schemas/RunTiming'
+        source:
+          $ref: '#/components/schemas/RunSource'
+        trigger:
+          $ref: '#/components/schemas/RunTrigger'
+        eval:
+          description: Present only when the run is eval-scoped.
+          $ref: '#/components/schemas/RunEval'
+        error:
+          description: Terminal failure message. Null when the run succeeded or is still in flight.
+          $ref: '#/components/schemas/RunError'
+        execution:
+          $ref: '#/components/schemas/RunExecutionMeta'
       required:
+      - id
       - type
-      - by
+      - finished
+      - sampleRank
+      - timing
+      - source
+      - trigger
+      - execution
       additionalProperties: false
     RunSourceGit:
       type: object
@@ -1360,7 +1291,22 @@ components:
       - resolvedTag
       - commitSha
       additionalProperties: false
-    RunAccepted:
+    RunInput:
+      type: object
+      properties:
+        args:
+          description: Input arguments the run was started with.
+        files:
+          description: Uploaded input files (agent runs only).
+          type: array
+          items:
+            $ref: '#/components/schemas/RunFile'
+        metadata:
+          description: Caller-supplied run metadata, if any.
+      required:
+      - args
+      additionalProperties: false
+    Run:
       type: object
       properties:
         id:
@@ -1372,13 +1318,208 @@ components:
           - agent
         finished:
           type: boolean
-          const: false
+          description: True when the run has reached a terminal status.
+        sampleRank:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Deterministic pseudo-random rank in [0, 1) for this run within the tenant. Use with a sample rate threshold to review a stable subset.
+        timing:
+          $ref: '#/components/schemas/RunTiming'
         source:
           $ref: '#/components/schemas/RunSource'
+        trigger:
+          $ref: '#/components/schemas/RunTrigger'
+        eval:
+          description: Present only when the run is eval-scoped.
+          $ref: '#/components/schemas/RunEval'
+        output:
+          description: Completed runs only.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        files:
+          description: Completed runs only. Download with GET /api/v1/runs/:id/artifacts/:path.
+          type: array
+          items:
+            $ref: '#/components/schemas/RunArtifact'
+        error:
+          description: Terminal failure message. Null when the run succeeded or is still in flight.
+          $ref: '#/components/schemas/RunError'
+        input:
+          description: '`expand=input`.'
+          $ref: '#/components/schemas/RunInput'
+        usage:
+          description: '`expand=usage`. Null for old runs without telemetry.'
+          anyOf:
+          - $ref: '#/components/schemas/RunUsage'
+          - type: 'null'
+        execution:
+          anyOf:
+          - $ref: '#/components/schemas/RunExecutionMeta'
+          - $ref: '#/components/schemas/RunExecution'
+          description: Slim execution metadata always present. Pass `expand=execution` to replace with full RunExecution (WorkflowRunExecution or AgentRunExecution depending on run type).
+        debug:
+          description: '`expand=debug`.'
+          $ref: '#/components/schemas/RunDebug'
       required:
       - id
       - type
       - finished
+      - sampleRank
+      - timing
+      - source
+      - trigger
+      - execution
+      additionalProperties: false
+    RunUsage:
+      type: object
+      properties:
+        tokens:
+          type: object
+          properties:
+            input:
+              anyOf:
+              - type: number
+              - type: 'null'
+            output:
+              anyOf:
+              - type: number
+              - type: 'null'
+            cacheRead:
+              anyOf:
+              - type: number
+              - type: 'null'
+            cacheWrite:
+              anyOf:
+              - type: number
+              - type: 'null'
+          required:
+          - input
+          - output
+          - cacheRead
+          - cacheWrite
+          additionalProperties: false
+        creditsCharged:
+          anyOf:
+          - type: number
+          - type: 'null'
+        durationMs:
+          anyOf:
+          - type: number
+          - type: 'null'
+        llmCallCount:
+          description: LLM call count (workflow runs only).
+          type: number
+        ocrPagesProcessed:
+          description: OCR pages processed (workflow runs only).
+          type: number
+        agentTurns:
+          description: Agent conversation turns (agent runs only).
+          anyOf:
+          - type: number
+          - type: 'null'
+      required:
+      - tokens
+      - creditsCharged
+      - durationMs
+      additionalProperties: false
+    RunExecutionRetry:
+      type: object
+      properties:
+        number:
+          type: number
+          description: Retry attempt index (0 = original run).
+        previousRunId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Run id of the prior attempt in the retry chain.
+        nextRun:
+          anyOf:
+          - type: object
+            properties:
+              id:
+                type: string
+              status:
+                type: string
+            required:
+            - id
+            - status
+            additionalProperties: false
+          - type: 'null'
+          description: Retry run spawned from this run, if any.
+      required:
+      - number
+      - previousRunId
+      - nextRun
+      additionalProperties: false
+    RunSource:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Owning workflow id or agent id.
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+        version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Workflow version label (workflow runs only).
+        versionId:
+          description: Captured workflow version id (workflow runs only).
+          anyOf:
+          - type: string
+          - type: 'null'
+        slug:
+          description: Agent slug (agent runs only).
+          anyOf:
+          - type: string
+          - type: 'null'
+        model:
+          description: LLM model used (agent runs only).
+          anyOf:
+          - type: string
+          - type: 'null'
+        git:
+          description: Git provenance (agent runs only).
+          anyOf:
+          - $ref: '#/components/schemas/RunSourceGit'
+          - type: 'null'
+        implementationAvailable:
+          description: Whether the live workflow/agent implementation still exists (`GET /api/v1/runs/:id` detail only).
+          type: boolean
+        automationFound:
+          description: Whether the owning automation registry row still exists (`GET /api/v1/runs/:id` detail only).
+          type: boolean
+        currentVersion:
+          description: Current released workflow version label when the source is live (`GET /api/v1/runs/:id` detail only).
+          anyOf:
+          - type: string
+          - type: 'null'
+      required:
+      - id
+      - name
+      - version
+      additionalProperties: false
+    RunDebug:
+      type: object
+      properties:
+        observability:
+          description: Execution phase timeline and structured failure.
+        traceId:
+          description: Workflow trace id for span lookup (workflow runs only).
+          anyOf:
+          - type: string
+          - type: 'null'
+      required:
+      - observability
       additionalProperties: false
     WorkflowRunExecution:
       type: object
@@ -1427,6 +1568,278 @@ components:
       - retry
       - steps
       additionalProperties: false
+    RunReviewCorrection:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum:
+          - field
+          - file
+        path:
+          type: string
+          description: JSON Pointer for field corrections, or canonical artifact path for file reviews.
+        label:
+          anyOf:
+          - type: string
+          - type: 'null'
+        originalValue:
+          anyOf:
+          - {}
+          - type: 'null'
+        correctedValue:
+          anyOf:
+          - {}
+          - type: 'null'
+        note:
+          type: string
+        correctedArtifactPath:
+          anyOf:
+          - type: string
+          - type: 'null'
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+      - id
+      - kind
+      - path
+      - label
+      - note
+      - createdAt
+      - updatedAt
+      additionalProperties: false
+    RunExecutionMeta:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ExecutionStatus'
+        schemaValid:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          description: Whether the completed output matched the workflow or agent output schema.
+        batchId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Experiment batch id when the run is part of a batch.
+        retry:
+          $ref: '#/components/schemas/RunExecutionRetry'
+        review:
+          description: Lightweight review state for run list rows.
+          anyOf:
+          - $ref: '#/components/schemas/RunReviewSummary'
+          - type: 'null'
+      required:
+      - status
+      - schemaValid
+      - batchId
+      - retry
+      additionalProperties: false
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
+    RunTrigger:
+      type: object
+      properties:
+        type:
+          anyOf:
+          - type: string
+          - type: 'null'
+        by:
+          anyOf:
+          - type: object
+            properties:
+              id:
+                type: string
+              name:
+                anyOf:
+                - type: string
+                - type: 'null'
+              email:
+                type: string
+            required:
+            - id
+            - name
+            - email
+            additionalProperties: false
+          - type: 'null'
+        email:
+          description: Inbound email trigger details (agent runs, `expand=input` not required).
+      required:
+      - type
+      - by
+      additionalProperties: false
+    RunTiming:
+      type: object
+      properties:
+        createdAt:
+          type: string
+        startedAt:
+          anyOf:
+          - type: string
+          - type: 'null'
+        completedAt:
+          anyOf:
+          - type: string
+          - type: 'null'
+        durationMs:
+          anyOf:
+          - type: number
+          - type: 'null'
+        cancelRequestedAt:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: When the user requested cancel; status may still be `running` until the worker stops.
+      required:
+      - createdAt
+      - startedAt
+      - completedAt
+      - durationMs
+      - cancelRequestedAt
+      additionalProperties: false
+    RunTraceEvent:
+      type: object
+      properties:
+        type:
+          description: Event type when present. Agent traces mirror trace.jsonl events; workflow traces use execution phase or step records.
+          type: string
+        phase:
+          description: Workflow execution phase, when present.
+          type: string
+        stepName:
+          description: Workflow step name, when present.
+          type: string
+        status:
+          description: Event or execution status, when present.
+          type: string
+        startedAt:
+          description: Event start timestamp.
+          anyOf:
+          - type: string
+          - type: 'null'
+        completedAt:
+          description: Event completion timestamp.
+          anyOf:
+          - type: string
+          - type: 'null'
+        message:
+          description: Human-readable event message.
+          anyOf:
+          - type: string
+          - type: 'null'
+      additionalProperties: {}
+      description: Trace event emitted by a workflow or agent run. Extra fields depend on the run type and event source.
+    ApiErrorIssue:
+      type: object
+      properties:
+        field:
+          type: string
+          description: JSON path of the offending field, or "<root>"
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
+      required:
+      - field
+      - message
+      - code
+      - severity
+      additionalProperties: false
+    RunFile:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+      - name
+      additionalProperties: false
+    RunExecution:
+      anyOf:
+      - $ref: '#/components/schemas/WorkflowRunExecution'
+      - $ref: '#/components/schemas/AgentRunExecution'
+    RunEventsResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunEvent'
+      required:
+      - events
+      additionalProperties: false
+    RunTraceResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunTraceEvent'
+          description: Chronological trace events. Workflow runs return observability phases or step executions; agent runs return parsed trace.jsonl events.
+      required:
+      - events
+      additionalProperties: false
+    RunArtifact:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+          description: '`input`, `output`, `debug`, `report`, or another stable artifact role.'
+        path:
+          type: string
+          description: Canonical artifact path for GET /api/v1/runs/:id/artifacts/:path.
+        stepName:
+          description: Workflow step that produced the file, when known.
+          type: string
+        contentType:
+          anyOf:
+          - type: string
+          - type: 'null'
+        size:
+          anyOf:
+          - type: integer
+            minimum: -9007199254740991
+            maximum: 9007199254740991
+          - type: 'null'
+      required:
+      - name
+      - role
+      - path
+      additionalProperties: false
+    RunRerunResponse:
+      $ref: '#/components/schemas/RunStartResponse'
     RunReview:
       type: object
       properties:
@@ -1505,6 +1918,64 @@ components:
       - updatedAt
       - corrections
       additionalProperties: false
+    RunStartResponse:
+      anyOf:
+      - $ref: '#/components/schemas/RunAccepted'
+      - $ref: '#/components/schemas/Run'
+    RunEval:
+      type: object
+      properties:
+        example:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Eval example label (agent example name or workflow example id).
+        exampleId:
+          description: Workflow eval example folder id (workflow runs only).
+          anyOf:
+          - type: string
+          - type: 'null'
+        score:
+          anyOf:
+          - type: number
+          - type: 'null'
+        passed:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+      required:
+      - example
+      - score
+      - passed
+      additionalProperties: false
+    RunsListResponse:
+      type: object
+      properties:
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunListItem'
+        nextCursor:
+          anyOf:
+          - type: string
+          - type: 'null'
+      required:
+      - runs
+      - nextCursor
+      additionalProperties: false
+    RunStepsResponse:
+      type: object
+      properties:
+        steps:
+          type: array
+          items: {}
+      required:
+      - steps
+      additionalProperties: false
+    RunError:
+      anyOf:
+      - type: string
+      - type: 'null'
     AgentRunExecution:
       type: object
       properties:
@@ -1556,109 +2027,30 @@ components:
       - retry
       - files
       additionalProperties: false
-    ExecutionStatus:
-      type: string
-      enum:
-      - created
-      - pending
-      - running
-      - waiting
-      - finalizing
-      - completed
-      - failed
-      - cancelled
-      - rejected
-    RunEventsResponse:
+    RunEvent:
       type: object
       properties:
-        events:
-          type: array
-          items:
-            $ref: '#/components/schemas/RunEvent'
-      required:
-      - events
-      additionalProperties: false
-    RunExecutionMeta:
-      type: object
-      properties:
-        status:
-          $ref: '#/components/schemas/ExecutionStatus'
-        schemaValid:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          description: Whether the completed output matched the workflow or agent output schema.
-        batchId:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Experiment batch id when the run is part of a batch.
-        retry:
-          $ref: '#/components/schemas/RunExecutionRetry'
-        review:
-          description: Lightweight review state for run list rows.
-          anyOf:
-          - $ref: '#/components/schemas/RunReviewSummary'
-          - type: 'null'
-      required:
-      - status
-      - schemaValid
-      - batchId
-      - retry
-      additionalProperties: false
-    RunExecutionRetry:
-      type: object
-      properties:
-        number:
-          type: number
-          description: Retry attempt index (0 = original run).
-        previousRunId:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Run id of the prior attempt in the retry chain.
-        nextRun:
-          anyOf:
-          - type: object
-            properties:
-              id:
-                type: string
-              status:
-                type: string
-            required:
-            - id
-            - status
-            additionalProperties: false
-          - type: 'null'
-          description: Retry run spawned from this run, if any.
-      required:
-      - number
-      - previousRunId
-      - nextRun
-      additionalProperties: false
-    RunDebug:
-      type: object
-      properties:
-        observability:
-          description: Execution phase timeline and structured failure.
-        traceId:
-          description: Workflow trace id for span lookup (workflow runs only).
-          anyOf:
-          - type: string
-          - type: 'null'
-      required:
-      - observability
-      additionalProperties: false
-    RunFile:
-      type: object
-      properties:
-        name:
+        type:
           type: string
+        timestamp:
+          type: string
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+        message:
+          anyOf:
+          - type: string
+          - type: 'null'
+        metadata:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties: {}
       required:
-      - name
+      - type
+      - timestamp
       additionalProperties: false
-    RunRerunResponse:
-      $ref: '#/components/schemas/RunStartResponse'
     RunReviewSummary:
       type: object
       properties:
@@ -1689,410 +2081,18 @@ components:
       - hasNote
       - correctionCount
       additionalProperties: false
-    RunTiming:
-      type: object
-      properties:
-        createdAt:
-          type: string
-        startedAt:
-          anyOf:
-          - type: string
-          - type: 'null'
-        completedAt:
-          anyOf:
-          - type: string
-          - type: 'null'
-        durationMs:
-          anyOf:
-          - type: number
-          - type: 'null'
-        cancelRequestedAt:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: When the user requested cancel; status may still be `running` until the worker stops.
-      required:
-      - createdAt
-      - startedAt
-      - completedAt
-      - durationMs
-      - cancelRequestedAt
-      additionalProperties: false
-    RunArtifact:
-      type: object
-      properties:
-        name:
-          type: string
-        role:
-          type: string
-          description: '`input`, `output`, `debug`, `report`, or another stable artifact role.'
-        path:
-          type: string
-          description: Canonical artifact path for GET /api/v1/runs/:id/artifacts/:path.
-        stepName:
-          description: Workflow step that produced the file, when known.
-          type: string
-        contentType:
-          anyOf:
-          - type: string
-          - type: 'null'
-        size:
-          anyOf:
-          - type: integer
-            minimum: -9007199254740991
-            maximum: 9007199254740991
-          - type: 'null'
-      required:
-      - name
-      - role
-      - path
-      additionalProperties: false
-    RunEval:
-      type: object
-      properties:
-        example:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Eval example label (agent example name or workflow example id).
-        exampleId:
-          description: Workflow eval example folder id (workflow runs only).
-          anyOf:
-          - type: string
-          - type: 'null'
-        score:
-          anyOf:
-          - type: number
-          - type: 'null'
-        passed:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-      required:
-      - example
-      - score
-      - passed
-      additionalProperties: false
-    RunSource:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Owning workflow id or agent id.
-        name:
-          anyOf:
-          - type: string
-          - type: 'null'
-        version:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Workflow version label (workflow runs only).
-        versionId:
-          description: Captured workflow version id (workflow runs only).
-          anyOf:
-          - type: string
-          - type: 'null'
-        slug:
-          description: Agent slug (agent runs only).
-          anyOf:
-          - type: string
-          - type: 'null'
-        model:
-          description: LLM model used (agent runs only).
-          anyOf:
-          - type: string
-          - type: 'null'
-        git:
-          description: Git provenance (agent runs only).
-          anyOf:
-          - $ref: '#/components/schemas/RunSourceGit'
-          - type: 'null'
-        implementationAvailable:
-          description: Whether the live workflow/agent implementation still exists (`GET /api/v1/runs/:id` detail only).
-          type: boolean
-        automationFound:
-          description: Whether the owning automation registry row still exists (`GET /api/v1/runs/:id` detail only).
-          type: boolean
-        currentVersion:
-          description: Current released workflow version label when the source is live (`GET /api/v1/runs/:id` detail only).
-          anyOf:
-          - type: string
-          - type: 'null'
-      required:
-      - id
-      - name
-      - version
-      additionalProperties: false
-    Run:
-      type: object
-      properties:
-        id:
-          type: string
-        type:
-          type: string
-          enum:
-          - workflow
-          - agent
-        finished:
-          type: boolean
-          description: True when the run has reached a terminal status.
-        sampleRank:
-          type: number
-          minimum: 0
-          maximum: 1
-          description: Deterministic pseudo-random rank in [0, 1) for this run within the tenant. Use with a sample rate threshold to review a stable subset.
-        timing:
-          $ref: '#/components/schemas/RunTiming'
-        source:
-          $ref: '#/components/schemas/RunSource'
-        trigger:
-          $ref: '#/components/schemas/RunTrigger'
-        eval:
-          description: Present only when the run is eval-scoped.
-          $ref: '#/components/schemas/RunEval'
-        output:
-          description: Completed runs only.
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-        files:
-          description: Completed runs only. Download with GET /api/v1/runs/:id/artifacts/:path.
-          type: array
-          items:
-            $ref: '#/components/schemas/RunArtifact'
-        error:
-          description: Terminal failure message. Null when the run succeeded or is still in flight.
-          $ref: '#/components/schemas/RunError'
-        input:
-          description: '`expand=input`.'
-          $ref: '#/components/schemas/RunInput'
-        usage:
-          description: '`expand=usage`. Null for old runs without telemetry.'
-          anyOf:
-          - $ref: '#/components/schemas/RunUsage'
-          - type: 'null'
-        execution:
-          anyOf:
-          - $ref: '#/components/schemas/RunExecutionMeta'
-          - $ref: '#/components/schemas/RunExecution'
-          description: Slim execution metadata always present. Pass `expand=execution` to replace with full RunExecution (WorkflowRunExecution or AgentRunExecution depending on run type).
-        debug:
-          description: '`expand=debug`.'
-          $ref: '#/components/schemas/RunDebug'
-      required:
-      - id
-      - type
-      - finished
-      - sampleRank
-      - timing
-      - source
-      - trigger
-      - execution
-      additionalProperties: false
-    RunUsageResponse:
-      type: object
-      properties:
-        usage:
-          anyOf:
-          - $ref: '#/components/schemas/RunUsage'
-          - type: 'null'
-      required:
-      - usage
-      additionalProperties: false
-    RunExecution:
-      anyOf:
-      - $ref: '#/components/schemas/WorkflowRunExecution'
-      - $ref: '#/components/schemas/AgentRunExecution'
-    ApiErrorEnvelope:
-      type: object
-      properties:
-        issues:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApiErrorIssue'
-        requestId:
-          type: string
-          description: Request id echoed via the x-request-id header
-        hint:
-          description: Suggested fix for known error patterns
-          type: string
-        docsUrl:
-          description: Link to relevant docs
-          type: string
-      required:
-      - issues
-      - requestId
-      additionalProperties: false
-    RunListItem:
-      type: object
-      properties:
-        id:
-          type: string
-        type:
-          type: string
-          enum:
-          - workflow
-          - agent
-        finished:
-          type: boolean
-          description: True when the run has reached a terminal status.
-        sampleRank:
-          type: number
-          minimum: 0
-          maximum: 1
-          description: Deterministic pseudo-random rank in [0, 1) for this run within the tenant. Use with a sample rate threshold to review a stable subset.
-        timing:
-          $ref: '#/components/schemas/RunTiming'
-        source:
-          $ref: '#/components/schemas/RunSource'
-        trigger:
-          $ref: '#/components/schemas/RunTrigger'
-        eval:
-          description: Present only when the run is eval-scoped.
-          $ref: '#/components/schemas/RunEval'
-        error:
-          description: Terminal failure message. Null when the run succeeded or is still in flight.
-          $ref: '#/components/schemas/RunError'
-        execution:
-          $ref: '#/components/schemas/RunExecutionMeta'
-      required:
-      - id
-      - type
-      - finished
-      - sampleRank
-      - timing
-      - source
-      - trigger
-      - execution
-      additionalProperties: false
-    RunEvent:
-      type: object
-      properties:
-        type:
-          type: string
-        timestamp:
-          type: string
-        status:
-          anyOf:
-          - type: string
-          - type: 'null'
-        message:
-          anyOf:
-          - type: string
-          - type: 'null'
-        metadata:
-          type: object
-          propertyNames:
-            type: string
-          additionalProperties: {}
-      required:
-      - type
-      - timestamp
-      additionalProperties: false
-    RunTraceEvent:
-      type: object
-      properties:
-        type:
-          description: Event type when present. Agent traces mirror trace.jsonl events; workflow traces use execution phase or step records.
-          type: string
-        phase:
-          description: Workflow execution phase, when present.
-          type: string
-        stepName:
-          description: Workflow step name, when present.
-          type: string
-        status:
-          description: Event or execution status, when present.
-          type: string
-        startedAt:
-          description: Event start timestamp.
-          anyOf:
-          - type: string
-          - type: 'null'
-        completedAt:
-          description: Event completion timestamp.
-          anyOf:
-          - type: string
-          - type: 'null'
-        message:
-          description: Human-readable event message.
-          anyOf:
-          - type: string
-          - type: 'null'
-      additionalProperties: {}
-      description: Trace event emitted by a workflow or agent run. Extra fields depend on the run type and event source.
-    RunReviewCorrection:
-      type: object
-      properties:
-        id:
-          type: string
-        kind:
-          type: string
-          enum:
-          - field
-          - file
-        path:
-          type: string
-          description: JSON Pointer for field corrections, or canonical artifact path for file reviews.
-        label:
-          anyOf:
-          - type: string
-          - type: 'null'
-        originalValue:
-          anyOf:
-          - {}
-          - type: 'null'
-        correctedValue:
-          anyOf:
-          - {}
-          - type: 'null'
-        note:
-          type: string
-        correctedArtifactPath:
-          anyOf:
-          - type: string
-          - type: 'null'
-        createdAt:
-          type: string
-        updatedAt:
-          type: string
-      required:
-      - id
-      - kind
-      - path
-      - label
-      - note
-      - createdAt
-      - updatedAt
-      additionalProperties: false
-    ApiErrorIssue:
-      type: object
-      properties:
-        field:
-          type: string
-          description: JSON path of the offending field, or "<root>"
-        message:
-          type: string
-          description: Human-readable error message
-        code:
-          type: string
-          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
-        severity:
-          type: string
-          enum:
-          - error
-          - warning
-          description: Issue severity
-      required:
-      - field
-      - message
-      - code
-      - severity
-      additionalProperties: false
+    ExecutionStatus:
+      type: string
+      enum:
+      - created
+      - pending
+      - running
+      - waiting
+      - finalizing
+      - completed
+      - failed
+      - cancelled
+      - rejected
   securitySchemes:
     bearerAuth:
       type: http

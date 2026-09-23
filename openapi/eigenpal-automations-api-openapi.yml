@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.2.0
 info:
   title: Eigenpal Automations API
   version: 1.0.0
@@ -448,112 +448,6 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
-    ListAutomationsResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/AutomationSummary'
-        total:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        limit:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        offset:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-      required:
-      - data
-      - total
-      - limit
-      - offset
-      additionalProperties: false
-    ListAutomationVersionsResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/AutomationVersion'
-        total:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        limit:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        offset:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-      required:
-      - data
-      - total
-      - limit
-      - offset
-      additionalProperties: false
-    AutomationType:
-      type: string
-      enum:
-      - workflow
-      - agent
-    ApiErrorEnvelope:
-      type: object
-      properties:
-        issues:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApiErrorIssue'
-        requestId:
-          type: string
-          description: Request id echoed via the x-request-id header
-        hint:
-          description: Suggested fix for known error patterns
-          type: string
-        docsUrl:
-          description: Link to relevant docs
-          type: string
-      required:
-      - issues
-      - requestId
-      additionalProperties: false
-    AutomationTriggerState:
-      type: object
-      properties:
-        api:
-          type: boolean
-        email:
-          type: boolean
-        manual:
-          type: boolean
-        cron:
-          type: boolean
-      required:
-      - api
-      - email
-      - manual
-      - cron
-      additionalProperties: false
-    AutomationTriggersResponse:
-      type: object
-      properties:
-        automationId:
-          type: string
-        type:
-          $ref: '#/components/schemas/AutomationType'
-        triggers:
-          $ref: '#/components/schemas/AutomationTriggerState'
-      required:
-      - automationId
-      - type
-      - triggers
-      additionalProperties: false
     ApiErrorIssue:
       type: object
       properties:
@@ -603,6 +497,86 @@ components:
       - id
       - automationId
       - version
+      additionalProperties: false
+    AutomationTriggersResponse:
+      type: object
+      properties:
+        automationId:
+          type: string
+        type:
+          $ref: '#/components/schemas/AutomationType'
+        triggers:
+          $ref: '#/components/schemas/AutomationTriggerState'
+      required:
+      - automationId
+      - type
+      - triggers
+      additionalProperties: false
+    AutomationTriggerState:
+      type: object
+      properties:
+        api:
+          type: boolean
+        email:
+          type: boolean
+        manual:
+          type: boolean
+        cron:
+          type: boolean
+      required:
+      - api
+      - email
+      - manual
+      - cron
+      additionalProperties: false
+    AutomationType:
+      type: string
+      enum:
+      - workflow
+      - agent
+    AutomationSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Implementation id for the automation. Workflow automations use workflow ids; agent automations use agent workflow ids.
+        type:
+          $ref: '#/components/schemas/AutomationType'
+        slug:
+          type: string
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+        status:
+          type: string
+        version:
+          anyOf:
+          - type: string
+          - type: 'null'
+        triggers:
+          $ref: '#/components/schemas/AutomationTriggerState'
+        implementationAvailable:
+          description: False when the automations registry row exists but the workflow/agent implementation row is missing.
+          type: boolean
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+        updatedAt:
+          anyOf:
+          - type: string
+          - type: string
+      required:
+      - id
+      - type
+      - slug
+      - name
+      - createdAt
       additionalProperties: false
     AutomationDetail:
       type: object
@@ -662,49 +636,75 @@ components:
       - name
       - createdAt
       additionalProperties: false
-    AutomationSummary:
+    ApiErrorEnvelope:
       type: object
       properties:
-        id:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
           type: string
-          description: Implementation id for the automation. Workflow automations use workflow ids; agent automations use agent workflow ids.
-        type:
-          $ref: '#/components/schemas/AutomationType'
-        slug:
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
           type: string
-        name:
-          anyOf:
-          - type: string
-          - type: 'null'
-        description:
-          anyOf:
-          - type: string
-          - type: 'null'
-        status:
+        docsUrl:
+          description: Link to relevant docs
           type: string
-        version:
-          anyOf:
-          - type: string
-          - type: 'null'
-        triggers:
-          $ref: '#/components/schemas/AutomationTriggerState'
-        implementationAvailable:
-          description: False when the automations registry row exists but the workflow/agent implementation row is missing.
-          type: boolean
-        createdAt:
-          anyOf:
-          - type: string
-          - type: string
-        updatedAt:
-          anyOf:
-          - type: string
-          - type: string
       required:
-      - id
-      - type
-      - slug
-      - name
-      - createdAt
+      - issues
+      - requestId
+      additionalProperties: false
+    ListAutomationVersionsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AutomationVersion'
+        total:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        limit:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        offset:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+      - data
+      - total
+      - limit
+      - offset
+      additionalProperties: false
+    ListAutomationsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AutomationSummary'
+        total:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        limit:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        offset:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+      - data
+      - total
+      - limit
+      - offset
       additionalProperties: false
   securitySchemes:
     bearerAuth:

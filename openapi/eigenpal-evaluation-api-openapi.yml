@@ -1,6 +1,6 @@
-openapi: 3.1.0
+openapi: 3.2.0
 info:
-  title: Eigenpal Automations Evaluation API
+  title: Eigenpal Evaluation API
   version: 1.0.0
   description: Public REST API for inspecting automations, starting and monitoring runs, managing files, collecting human reviews, and running evaluations.
   contact:
@@ -22,7 +22,7 @@ paths:
     get:
       operationId: automations.dataset.export
       summary: Export automation dataset
-      description: Download the automation dataset as a ZIP archive. The archive uses the examples/<name>/input and examples/<name>/expected folder convention, so it can be re-imported into another automation or environment.
+      description: Download the automation dataset as a ZIP archive. The archive uses the examples//input and examples//expected folder convention, so it can be re-imported into another automation or environment.
       tags:
       - Evaluation
       parameters:
@@ -99,7 +99,7 @@ paths:
     post:
       operationId: automations.dataset.import
       summary: Import automation dataset
-      description: Import a dataset ZIP archive using the examples/<name>/input and examples/<name>/expected folder convention. Use `mode=append` for additive imports or `mode=replace` to replace the dataset.
+      description: Import a dataset ZIP archive using the examples//input and examples//expected folder convention. Use `mode=append` for additive imports or `mode=replace` to replace the dataset.
       tags:
       - Evaluation
       parameters:
@@ -2320,162 +2320,33 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
-    DatasetExampleExpectedFileRenameRequest:
-      type: object
-      properties:
-        newFilename:
-          type: string
-          description: New basename for the file. The parent folder is preserved.
-      required:
-      - newFilename
-    DatasetExampleUpdate:
-      type: object
-      properties:
-        name:
-          description: Example name. Required on create; omitted or null uses a generated name where supported.
-          anyOf:
-          - type: string
-            minLength: 1
-            maxLength: 128
-          - type: 'null'
-        input:
-          description: Input arguments for the example.
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-        expected:
-          description: Expected JSON output. Null clears the expected output.
-          anyOf:
-          - {}
-          - type: 'null'
-        metadata:
-          description: Caller-managed metadata.
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-        annotation:
-          description: Human note about the example. Null clears the annotation.
-          anyOf:
-          - type: string
-            maxLength: 2000
-          - type: 'null'
-        rowOrder:
-          description: Optional display order. Null clears the order.
-          anyOf:
-          - type: integer
-            minimum: 0
-            maximum: 9007199254740991
-          - type: 'null'
-        overrides:
-          description: Step output overrides used during example runs.
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-      additionalProperties: false
-      description: Partial update for a dataset example. Omitted fields are preserved.
-    Experiment:
+    ExampleRunResponse:
       type: object
       properties:
         id:
           type: string
-          description: Experiment batch id. Some CLI commands historically call this a batch id.
-        automationId:
-          type: string
-          description: Automation this experiment belongs to.
-        automationType:
-          $ref: '#/components/schemas/AutomationType'
-        status:
+          description: Run id created for this example.
+        type:
           type: string
           enum:
-          - queued
-          - running
-          - completed
-          description: Experiment batch status.
-        runCount:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Total runs in the experiment.
-        completedCount:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Runs that have completed.
-        passedCount:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Runs whose evaluator scores passed.
-        failedCount:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Runs whose evaluator scores failed.
-        avgScore:
-          anyOf:
-          - type: number
-          - type: 'null'
-          description: Average automated evaluator score.
-        createdAt:
-          anyOf:
-          - type: string
-          - type: string
-        completedAt:
-          anyOf:
-          - anyOf:
-            - type: string
-            - type: string
-          - type: 'null'
-        version:
+          - workflow
+          - agent
+          description: Implementation type behind the automation.
+        batchId:
           anyOf:
           - type: string
           - type: 'null'
+          description: Experiment batch id when the run is associated with a batch. The API also calls this an experiment id in experiment routes.
+        finished:
+          type: boolean
+          const: false
+          description: Example runs are accepted asynchronously.
       required:
       - id
-      - automationId
-      - automationType
-      - status
-      - runCount
-      - completedCount
-      - passedCount
-      - failedCount
-      - avgScore
-      - createdAt
-      - completedAt
-      - version
+      - type
+      - batchId
+      - finished
       additionalProperties: false
-      description: Experiment batch summary for an automation dataset run.
-    DatasetExampleInputFileUploadRequest:
-      type: object
-      properties:
-        file:
-          type: array
-          items:
-            type: string
-            format: binary
-          description: One or more input files to upload.
-      required:
-      - file
-    DatasetExampleExpectedFileUploadRequest:
-      type: object
-      properties:
-        file:
-          type: array
-          items:
-            type: string
-            format: binary
-          description: One or more expected files to upload.
-      required:
-      - file
     DatasetExampleList:
       type: object
       properties:
@@ -2500,102 +2371,6 @@ components:
       - total
       - limit
       - offset
-      additionalProperties: false
-    AutomationDatasetImportMultipartRequest:
-      type: object
-      properties:
-        file:
-          type: string
-          description: Dataset ZIP file
-          format: binary
-        mode:
-          description: '`append` adds examples without deleting existing rows. `replace` deletes the current dataset before importing.'
-          type: string
-          enum:
-          - append
-          - replace
-      required:
-      - file
-    DatasetExampleExpectedFileRenameResponse:
-      type: object
-      properties:
-        ok:
-          type: boolean
-          const: true
-        filename:
-          type: string
-        path:
-          type: string
-          description: Updated expected file path.
-      required:
-      - ok
-      - filename
-      - path
-      additionalProperties: false
-    ExperimentCreateResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Experiment batch id.
-        runs:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-                description: Run id.
-              exampleId:
-                anyOf:
-                - type: string
-                - type: 'null'
-                description: Dataset example id.
-            required:
-            - id
-            - exampleId
-            additionalProperties: false
-          description: Runs enqueued for this experiment.
-        total:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Number of runs enqueued.
-      required:
-      - id
-      - runs
-      - total
-      additionalProperties: false
-      description: Accepted experiment batch and the runs it enqueued.
-    DatasetExampleInputFileUploadResponse:
-      type: object
-      properties:
-        uploaded:
-          type: array
-          items:
-            type: string
-          description: Stored input file paths.
-      required:
-      - uploaded
-      additionalProperties: false
-    DatasetExampleInputFileRenameRequest:
-      type: object
-      properties:
-        newFilename:
-          type: string
-          description: New basename for the file. The parent folder is preserved.
-      required:
-      - newFilename
-    ExperimentRef:
-      type: object
-      properties:
-        id:
-          type: string
-        automationId:
-          type: string
-      required:
-      - id
-      - automationId
       additionalProperties: false
     DatasetImportResponse:
       anyOf:
@@ -2654,6 +2429,178 @@ components:
         - deleted
         - filesDeleted
         additionalProperties: false
+    ExperimentRef:
+      type: object
+      properties:
+        id:
+          type: string
+        automationId:
+          type: string
+      required:
+      - id
+      - automationId
+      additionalProperties: false
+    DatasetExampleInputFileUploadResponse:
+      type: object
+      properties:
+        uploaded:
+          type: array
+          items:
+            type: string
+          description: Stored input file paths.
+      required:
+      - uploaded
+      additionalProperties: false
+    DatasetExampleInputFileList:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+          description: Paths under the example input folder.
+      required:
+      - files
+      additionalProperties: false
+    DatasetExampleExpectedFileRenameRequest:
+      type: object
+      properties:
+        newFilename:
+          type: string
+          description: New basename for the file. The parent folder is preserved.
+      required:
+      - newFilename
+    DatasetExampleExpectedFileRenameResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          const: true
+        filename:
+          type: string
+        path:
+          type: string
+          description: Updated expected file path.
+      required:
+      - ok
+      - filename
+      - path
+      additionalProperties: false
+    DatasetExampleInputFileRenameRequest:
+      type: object
+      properties:
+        newFilename:
+          type: string
+          description: New basename for the file. The parent folder is preserved.
+      required:
+      - newFilename
+    EvalResult:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Evaluator result id.
+        runId:
+          type: string
+          description: Run this score belongs to.
+        automationId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Automation this score belongs to.
+        evaluatorName:
+          type: string
+          description: Evaluator name from configuration.
+        evaluatorType:
+          type: string
+          description: Evaluator implementation type.
+        score:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Automated evaluator score. Do not confuse this with a human review verdict.
+        passed:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          description: Whether this evaluator passed.
+        label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Optional evaluator label.
+        weight:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Weight used in aggregate scoring.
+        passThreshold:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Score threshold required for this evaluator to pass.
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Evaluator description.
+        details:
+          anyOf:
+          - {}
+          - type: 'null'
+          description: Evaluator-specific details.
+        error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Evaluator error, when scoring failed.
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+      required:
+      - id
+      - runId
+      - automationId
+      - evaluatorName
+      - evaluatorType
+      - score
+      - passed
+      - label
+      - weight
+      - passThreshold
+      - description
+      - details
+      - error
+      - createdAt
+      additionalProperties: false
+      description: Automated evaluator result for one run.
+    EvaluatorConfigUpdate:
+      type: object
+      properties:
+        yaml:
+          type: string
+          minLength: 1
+          maxLength: 1048576
+          description: Complete evaluator YAML to validate and store.
+      required:
+      - yaml
+      description: Replacement evaluator configuration.
+    AutomationDatasetImportMultipartRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          description: Dataset ZIP file
+          format: binary
+        mode:
+          description: '`append` adds examples without deleting existing rows. `replace` deletes the current dataset before importing.'
+          type: string
+          enum:
+          - append
+          - replace
+      required:
+      - file
     ExperimentCreate:
       type: object
       properties:
@@ -2673,18 +2620,6 @@ components:
           description: Optional source version/ref to use for experiment runs.
           type: string
       description: Request body for starting an experiment batch.
-    RunScoresResponse:
-      type: object
-      properties:
-        scores:
-          type: array
-          items:
-            $ref: '#/components/schemas/EvalResult'
-          description: Automated evaluator scores for the run. These are separate from human review verdicts.
-      required:
-      - scores
-      additionalProperties: false
-      description: Automated evaluator results attached to a run.
     DatasetExampleMutation:
       type: object
       properties:
@@ -2738,6 +2673,80 @@ components:
             additionalProperties: {}
           - type: 'null'
       description: Fields used to create or update a dataset example.
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
+    DatasetExampleUpdate:
+      type: object
+      properties:
+        name:
+          description: Example name. Required on create; omitted or null uses a generated name where supported.
+          anyOf:
+          - type: string
+            minLength: 1
+            maxLength: 128
+          - type: 'null'
+        input:
+          description: Input arguments for the example.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        expected:
+          description: Expected JSON output. Null clears the expected output.
+          anyOf:
+          - {}
+          - type: 'null'
+        metadata:
+          description: Caller-managed metadata.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        annotation:
+          description: Human note about the example. Null clears the annotation.
+          anyOf:
+          - type: string
+            maxLength: 2000
+          - type: 'null'
+        rowOrder:
+          description: Optional display order. Null clears the order.
+          anyOf:
+          - type: integer
+            minimum: 0
+            maximum: 9007199254740991
+          - type: 'null'
+        overrides:
+          description: Step output overrides used during example runs.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+      additionalProperties: false
+      description: Partial update for a dataset example. Omitted fields are preserved.
     DatasetExampleInputFileRenameResponse:
       type: object
       properties:
@@ -2754,114 +2763,61 @@ components:
       - filename
       - path
       additionalProperties: false
-    DatasetExample:
+    EvaluatorConfigResponse:
       type: object
       properties:
-        id:
-          type: string
-          description: Stable public example id. Workflow examples use DB ids; agent examples use deterministic name-derived ids.
-        name:
-          type: string
-          description: Human-readable dataset example name.
         automationId:
           type: string
-          description: Automation that owns this example.
+          description: Automation that owns this evaluator config.
         automationType:
           $ref: '#/components/schemas/AutomationType'
-        input:
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-          description: Input arguments used when this example is run.
-        expected:
-          anyOf:
-          - {}
-          - type: 'null'
-          description: Expected JSON output for evaluator comparisons.
-        expectedFiles:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                description: Expected file name.
-              url:
-                description: Download URL for the expected file.
-                type: string
-            required:
-            - name
-            additionalProperties: false
-          description: Expected files attached to this example.
-        metadata:
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-          description: Caller-managed metadata for sorting or filtering examples.
-        annotation:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Human note about the example.
-        rowOrder:
-          anyOf:
-          - type: number
-          - type: 'null'
-          description: Optional display order within the dataset.
-        overrides:
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-          description: Step output overrides used when running this example.
-        latestRunId:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Most recent run id created from this example.
-        createdAt:
-          anyOf:
-          - type: string
-          - type: string
-        updatedAt:
-          anyOf:
-          - anyOf:
-            - type: string
-            - type: string
-          - type: 'null'
+        yaml:
+          type: string
+          description: Evaluator configuration YAML.
+        config:
+          type: object
+          properties:
+            evaluators:
+              type: array
+              items: {}
+              description: Parsed evaluator definitions from the YAML.
+            passThreshold:
+              type: number
+              description: Overall score threshold required for the experiment to pass.
+          required:
+          - evaluators
+          - passThreshold
+          additionalProperties: false
       required:
-      - id
-      - name
       - automationId
       - automationType
-      - input
-      - expected
-      - expectedFiles
-      - metadata
-      - annotation
-      - rowOrder
-      - overrides
-      - latestRunId
+      - yaml
+      - config
       additionalProperties: false
-      description: One input/expected-output row in an automation dataset.
-    DatasetExampleInputFileList:
+      description: Evaluator YAML and parsed evaluator configuration for an automation.
+    ApiErrorIssue:
       type: object
       properties:
-        files:
-          type: array
-          items:
-            type: string
-          description: Paths under the example input folder.
+        field:
+          type: string
+          description: JSON path of the offending field, or "<root>"
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
       required:
-      - files
+      - field
+      - message
+      - code
+      - severity
       additionalProperties: false
     ExperimentDetail:
       type: object
@@ -2986,161 +2942,132 @@ components:
       - resultsByRun
       additionalProperties: false
       description: Experiment batch detail.
-    EvalResult:
+    DatasetExampleExpectedFileUploadRequest:
+      type: object
+      properties:
+        file:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: One or more expected files to upload.
+      required:
+      - file
+    AutomationType:
+      type: string
+      enum:
+      - workflow
+      - agent
+    RunScoresResponse:
+      type: object
+      properties:
+        scores:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvalResult'
+          description: Automated evaluator scores for the run. These are separate from human review verdicts.
+      required:
+      - scores
+      additionalProperties: false
+      description: Automated evaluator results attached to a run.
+    DatasetExample:
       type: object
       properties:
         id:
           type: string
-          description: Evaluator result id.
-        runId:
+          description: Stable public example id. Workflow examples use DB ids; agent examples use deterministic name-derived ids.
+        name:
           type: string
-          description: Run this score belongs to.
+          description: Human-readable dataset example name.
         automationId:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Automation this score belongs to.
-        evaluatorName:
           type: string
-          description: Evaluator name from configuration.
-        evaluatorType:
-          type: string
-          description: Evaluator implementation type.
-        score:
+          description: Automation that owns this example.
+        automationType:
+          $ref: '#/components/schemas/AutomationType'
+        input:
           anyOf:
-          - type: number
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
           - type: 'null'
-          description: Automated evaluator score. Do not confuse this with a human review verdict.
-        passed:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          description: Whether this evaluator passed.
-        label:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Optional evaluator label.
-        weight:
-          anyOf:
-          - type: number
-          - type: 'null'
-          description: Weight used in aggregate scoring.
-        passThreshold:
-          anyOf:
-          - type: number
-          - type: 'null'
-          description: Score threshold required for this evaluator to pass.
-        description:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Evaluator description.
-        details:
+          description: Input arguments used when this example is run.
+        expected:
           anyOf:
           - {}
           - type: 'null'
-          description: Evaluator-specific details.
-        error:
+          description: Expected JSON output for evaluator comparisons.
+        expectedFiles:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Expected file name.
+              url:
+                description: Download URL for the expected file.
+                type: string
+            required:
+            - name
+            additionalProperties: false
+          description: Expected files attached to this example.
+        metadata:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+          description: Caller-managed metadata for sorting or filtering examples.
+        annotation:
           anyOf:
           - type: string
           - type: 'null'
-          description: Evaluator error, when scoring failed.
+          description: Human note about the example.
+        rowOrder:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Optional display order within the dataset.
+        overrides:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+          description: Step output overrides used when running this example.
+        latestRunId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Most recent run id created from this example.
         createdAt:
           anyOf:
           - type: string
           - type: string
+        updatedAt:
+          anyOf:
+          - anyOf:
+            - type: string
+            - type: string
+          - type: 'null'
       required:
       - id
-      - runId
-      - automationId
-      - evaluatorName
-      - evaluatorType
-      - score
-      - passed
-      - label
-      - weight
-      - passThreshold
-      - description
-      - details
-      - error
-      - createdAt
-      additionalProperties: false
-      description: Automated evaluator result for one run.
-    DatasetExampleExpectedFileUploadResponse:
-      type: object
-      properties:
-        uploaded:
-          type: array
-          items:
-            type: string
-          description: Stored expected file paths.
-      required:
-      - uploaded
-      additionalProperties: false
-    EvaluatorConfigResponse:
-      type: object
-      properties:
-        automationId:
-          type: string
-          description: Automation that owns this evaluator config.
-        automationType:
-          $ref: '#/components/schemas/AutomationType'
-        yaml:
-          type: string
-          description: Evaluator configuration YAML.
-        config:
-          type: object
-          properties:
-            evaluators:
-              type: array
-              items: {}
-              description: Parsed evaluator definitions from the YAML.
-            passThreshold:
-              type: number
-              description: Overall score threshold required for the experiment to pass.
-          required:
-          - evaluators
-          - passThreshold
-          additionalProperties: false
-      required:
+      - name
       - automationId
       - automationType
-      - yaml
-      - config
+      - input
+      - expected
+      - expectedFiles
+      - metadata
+      - annotation
+      - rowOrder
+      - overrides
+      - latestRunId
       additionalProperties: false
-      description: Evaluator YAML and parsed evaluator configuration for an automation.
-    ApiErrorEnvelope:
-      type: object
-      properties:
-        issues:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApiErrorIssue'
-        requestId:
-          type: string
-          description: Request id echoed via the x-request-id header
-        hint:
-          description: Suggested fix for known error patterns
-          type: string
-        docsUrl:
-          description: Link to relevant docs
-          type: string
-      required:
-      - issues
-      - requestId
-      additionalProperties: false
-    EvaluatorConfigUpdate:
-      type: object
-      properties:
-        yaml:
-          type: string
-          minLength: 1
-          maxLength: 1048576
-          description: Complete evaluator YAML to validate and store.
-      required:
-      - yaml
-      description: Replacement evaluator configuration.
+      description: One input/expected-output row in an automation dataset.
     DatasetExampleExpectedFileList:
       type: object
       properties:
@@ -3152,62 +3079,135 @@ components:
       required:
       - files
       additionalProperties: false
-    ExampleRunResponse:
+    ExperimentCreateResponse:
       type: object
       properties:
         id:
           type: string
-          description: Run id created for this example.
-        type:
+          description: Experiment batch id.
+        runs:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Run id.
+              exampleId:
+                anyOf:
+                - type: string
+                - type: 'null'
+                description: Dataset example id.
+            required:
+            - id
+            - exampleId
+            additionalProperties: false
+          description: Runs enqueued for this experiment.
+        total:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Number of runs enqueued.
+      required:
+      - id
+      - runs
+      - total
+      additionalProperties: false
+      description: Accepted experiment batch and the runs it enqueued.
+    DatasetExampleExpectedFileUploadResponse:
+      type: object
+      properties:
+        uploaded:
+          type: array
+          items:
+            type: string
+          description: Stored expected file paths.
+      required:
+      - uploaded
+      additionalProperties: false
+    Experiment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Experiment batch id. Some CLI commands historically call this a batch id.
+        automationId:
+          type: string
+          description: Automation this experiment belongs to.
+        automationType:
+          $ref: '#/components/schemas/AutomationType'
+        status:
           type: string
           enum:
-          - workflow
-          - agent
-          description: Implementation type behind the automation.
-        batchId:
+          - queued
+          - running
+          - completed
+          description: Experiment batch status.
+        runCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Total runs in the experiment.
+        completedCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs that have completed.
+        passedCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs whose evaluator scores passed.
+        failedCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs whose evaluator scores failed.
+        avgScore:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Average automated evaluator score.
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+        completedAt:
+          anyOf:
+          - anyOf:
+            - type: string
+            - type: string
+          - type: 'null'
+        version:
           anyOf:
           - type: string
           - type: 'null'
-          description: Experiment batch id when the run is associated with a batch. The API also calls this an experiment id in experiment routes.
-        finished:
-          type: boolean
-          const: false
-          description: Example runs are accepted asynchronously.
       required:
       - id
-      - type
-      - batchId
-      - finished
+      - automationId
+      - automationType
+      - status
+      - runCount
+      - completedCount
+      - passedCount
+      - failedCount
+      - avgScore
+      - createdAt
+      - completedAt
+      - version
       additionalProperties: false
-    ApiErrorIssue:
+      description: Experiment batch summary for an automation dataset run.
+    DatasetExampleInputFileUploadRequest:
       type: object
       properties:
-        field:
-          type: string
-          description: JSON path of the offending field, or "<root>"
-        message:
-          type: string
-          description: Human-readable error message
-        code:
-          type: string
-          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
-        severity:
-          type: string
-          enum:
-          - error
-          - warning
-          description: Issue severity
+        file:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: One or more input files to upload.
       required:
-      - field
-      - message
-      - code
-      - severity
-      additionalProperties: false
-    AutomationType:
-      type: string
-      enum:
-      - workflow
-      - agent
+      - file
   securitySchemes:
     bearerAuth:
       type: http
