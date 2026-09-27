@@ -289,15 +289,6 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
-    CreateFileMultipartRequest:
-      type: object
-      properties:
-        file:
-          type: string
-          description: Binary file field
-          format: binary
-      required:
-      - file
     ApiErrorIssue:
       type: object
       properties:
@@ -322,14 +313,15 @@ components:
       - code
       - severity
       additionalProperties: false
-    DeleteFileResponse:
+    CreateFileMultipartRequest:
       type: object
       properties:
-        deleted:
-          type: boolean
+        file:
+          type: string
+          description: Binary file field
+          format: binary
       required:
-      - deleted
-      additionalProperties: false
+      - file
     File:
       type: object
       properties:
@@ -381,6 +373,14 @@ components:
       required:
       - issues
       - requestId
+      additionalProperties: false
+    DeleteFileResponse:
+      type: object
+      properties:
+        deleted:
+          type: boolean
+      required:
+      - deleted
       additionalProperties: false
   securitySchemes:
     bearerAuth:

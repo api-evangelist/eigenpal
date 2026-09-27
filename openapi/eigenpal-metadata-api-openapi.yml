@@ -81,6 +81,26 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
     AuthCheckResponse:
       type: object
       properties:
@@ -150,26 +170,6 @@ components:
       - message
       - code
       - severity
-      additionalProperties: false
-    ApiErrorEnvelope:
-      type: object
-      properties:
-        issues:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApiErrorIssue'
-        requestId:
-          type: string
-          description: Request id echoed via the x-request-id header
-        hint:
-          description: Suggested fix for known error patterns
-          type: string
-        docsUrl:
-          description: Link to relevant docs
-          type: string
-      required:
-      - issues
-      - requestId
       additionalProperties: false
   securitySchemes:
     bearerAuth:
