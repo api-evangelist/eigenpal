@@ -289,39 +289,6 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
-    ApiErrorIssue:
-      type: object
-      properties:
-        field:
-          type: string
-          description: JSON path of the offending field, or "<root>"
-        message:
-          type: string
-          description: Human-readable error message
-        code:
-          type: string
-          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
-        severity:
-          type: string
-          enum:
-          - error
-          - warning
-          description: Issue severity
-      required:
-      - field
-      - message
-      - code
-      - severity
-      additionalProperties: false
-    CreateFileMultipartRequest:
-      type: object
-      properties:
-        file:
-          type: string
-          description: Binary file field
-          format: binary
-      required:
-      - file
     File:
       type: object
       properties:
@@ -354,6 +321,47 @@ components:
       - size
       - createdAt
       additionalProperties: false
+    DeleteFileResponse:
+      type: object
+      properties:
+        deleted:
+          type: boolean
+      required:
+      - deleted
+      additionalProperties: false
+    CreateFileMultipartRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          description: Binary file field
+          format: binary
+      required:
+      - file
+    ApiErrorIssue:
+      type: object
+      properties:
+        field:
+          type: string
+          description: JSON path of the offending field, or "<root>"
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
+      required:
+      - field
+      - message
+      - code
+      - severity
+      additionalProperties: false
     ApiErrorEnvelope:
       type: object
       properties:
@@ -373,14 +381,6 @@ components:
       required:
       - issues
       - requestId
-      additionalProperties: false
-    DeleteFileResponse:
-      type: object
-      properties:
-        deleted:
-          type: boolean
-      required:
-      - deleted
       additionalProperties: false
   securitySchemes:
     bearerAuth:

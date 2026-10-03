@@ -81,25 +81,29 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
-    ApiErrorEnvelope:
+    ApiErrorIssue:
       type: object
       properties:
-        issues:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApiErrorIssue'
-        requestId:
+        field:
           type: string
-          description: Request id echoed via the x-request-id header
-        hint:
-          description: Suggested fix for known error patterns
+          description: JSON path of the offending field, or "<root>"
+        message:
           type: string
-        docsUrl:
-          description: Link to relevant docs
+          description: Human-readable error message
+        code:
           type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
       required:
-      - issues
-      - requestId
+      - field
+      - message
+      - code
+      - severity
       additionalProperties: false
     AuthCheckResponse:
       type: object
@@ -147,29 +151,25 @@ components:
       - scope
       - wildcardGranted
       additionalProperties: false
-    ApiErrorIssue:
+    ApiErrorEnvelope:
       type: object
       properties:
-        field:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
           type: string
-          description: JSON path of the offending field, or "<root>"
-        message:
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
           type: string
-          description: Human-readable error message
-        code:
+        docsUrl:
+          description: Link to relevant docs
           type: string
-          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
-        severity:
-          type: string
-          enum:
-          - error
-          - warning
-          description: Issue severity
       required:
-      - field
-      - message
-      - code
-      - severity
+      - issues
+      - requestId
       additionalProperties: false
   securitySchemes:
     bearerAuth:

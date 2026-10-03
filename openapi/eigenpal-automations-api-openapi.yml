@@ -448,6 +448,62 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
+    ListAutomationVersionsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AutomationVersion'
+        total:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        limit:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        offset:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+      - data
+      - total
+      - limit
+      - offset
+      additionalProperties: false
+    AutomationType:
+      type: string
+      enum:
+      - workflow
+      - agent
+    AutomationVersion:
+      type: object
+      properties:
+        id:
+          type: string
+        automationId:
+          type: string
+        version:
+          anyOf:
+          - type: string
+          - type: 'null'
+        sourceRef:
+          anyOf:
+          - type: string
+          - type: 'null'
+        isCurrent:
+          type: boolean
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+      required:
+      - id
+      - automationId
+      - version
+      additionalProperties: false
     AutomationDetail:
       type: object
       properties:
@@ -506,54 +562,36 @@ components:
       - name
       - createdAt
       additionalProperties: false
-    ApiErrorIssue:
+    AutomationTriggerState:
       type: object
       properties:
-        field:
-          type: string
-          description: JSON path of the offending field, or "<root>"
-        message:
-          type: string
-          description: Human-readable error message
-        code:
-          type: string
-          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
-        severity:
-          type: string
-          enum:
-          - error
-          - warning
-          description: Issue severity
+        api:
+          type: boolean
+        email:
+          type: boolean
+        manual:
+          type: boolean
+        cron:
+          type: boolean
       required:
-      - field
-      - message
-      - code
-      - severity
+      - api
+      - email
+      - manual
+      - cron
       additionalProperties: false
-    ListAutomationVersionsResponse:
+    AutomationTriggersResponse:
       type: object
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/AutomationVersion'
-        total:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        limit:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        offset:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
+        automationId:
+          type: string
+        type:
+          $ref: '#/components/schemas/AutomationType'
+        triggers:
+          $ref: '#/components/schemas/AutomationTriggerState'
       required:
-      - data
-      - total
-      - limit
-      - offset
+      - automationId
+      - type
+      - triggers
       additionalProperties: false
     AutomationSummary:
       type: object
@@ -599,45 +637,49 @@ components:
       - name
       - createdAt
       additionalProperties: false
-    AutomationVersion:
+    ApiErrorIssue:
       type: object
       properties:
-        id:
+        field:
           type: string
-        automationId:
+          description: JSON path of the offending field, or "<root>"
+        message:
           type: string
-        version:
-          anyOf:
-          - type: string
-          - type: 'null'
-        sourceRef:
-          anyOf:
-          - type: string
-          - type: 'null'
-        isCurrent:
-          type: boolean
-        createdAt:
-          anyOf:
-          - type: string
-          - type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
       required:
-      - id
-      - automationId
-      - version
+      - field
+      - message
+      - code
+      - severity
       additionalProperties: false
-    AutomationTriggersResponse:
+    ApiErrorEnvelope:
       type: object
       properties:
-        automationId:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
           type: string
-        type:
-          $ref: '#/components/schemas/AutomationType'
-        triggers:
-          $ref: '#/components/schemas/AutomationTriggerState'
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
       required:
-      - automationId
-      - type
-      - triggers
+      - issues
+      - requestId
       additionalProperties: false
     ListAutomationsResponse:
       type: object
@@ -664,48 +706,6 @@ components:
       - limit
       - offset
       additionalProperties: false
-    ApiErrorEnvelope:
-      type: object
-      properties:
-        issues:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApiErrorIssue'
-        requestId:
-          type: string
-          description: Request id echoed via the x-request-id header
-        hint:
-          description: Suggested fix for known error patterns
-          type: string
-        docsUrl:
-          description: Link to relevant docs
-          type: string
-      required:
-      - issues
-      - requestId
-      additionalProperties: false
-    AutomationTriggerState:
-      type: object
-      properties:
-        api:
-          type: boolean
-        email:
-          type: boolean
-        manual:
-          type: boolean
-        cron:
-          type: boolean
-      required:
-      - api
-      - email
-      - manual
-      - cron
-      additionalProperties: false
-    AutomationType:
-      type: string
-      enum:
-      - workflow
-      - agent
   securitySchemes:
     bearerAuth:
       type: http
