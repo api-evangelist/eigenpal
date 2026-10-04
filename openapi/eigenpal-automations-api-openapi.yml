@@ -448,6 +448,68 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
+    ListAutomationsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AutomationSummary'
+        total:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        limit:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        offset:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+      - data
+      - total
+      - limit
+      - offset
+      additionalProperties: false
+    AutomationTriggerState:
+      type: object
+      properties:
+        api:
+          type: boolean
+        email:
+          type: boolean
+        manual:
+          type: boolean
+        cron:
+          type: boolean
+      required:
+      - api
+      - email
+      - manual
+      - cron
+      additionalProperties: false
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
     ListAutomationVersionsResponse:
       type: object
       properties:
@@ -472,126 +534,6 @@ components:
       - total
       - limit
       - offset
-      additionalProperties: false
-    AutomationType:
-      type: string
-      enum:
-      - workflow
-      - agent
-    AutomationVersion:
-      type: object
-      properties:
-        id:
-          type: string
-        automationId:
-          type: string
-        version:
-          anyOf:
-          - type: string
-          - type: 'null'
-        sourceRef:
-          anyOf:
-          - type: string
-          - type: 'null'
-        isCurrent:
-          type: boolean
-        createdAt:
-          anyOf:
-          - type: string
-          - type: string
-      required:
-      - id
-      - automationId
-      - version
-      additionalProperties: false
-    AutomationDetail:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Implementation id for the automation. Workflow automations use workflow ids; agent automations use agent workflow ids.
-        type:
-          $ref: '#/components/schemas/AutomationType'
-        slug:
-          type: string
-        name:
-          anyOf:
-          - type: string
-          - type: 'null'
-        description:
-          anyOf:
-          - type: string
-          - type: 'null'
-        status:
-          type: string
-        version:
-          anyOf:
-          - type: string
-          - type: 'null'
-        triggers:
-          $ref: '#/components/schemas/AutomationTriggerState'
-        implementationAvailable:
-          description: False when the automations registry row exists but the workflow/agent implementation row is missing.
-          type: boolean
-        createdAt:
-          anyOf:
-          - type: string
-          - type: string
-        updatedAt:
-          anyOf:
-          - type: string
-          - type: string
-        inputSchema:
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-        outputSchema:
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-      required:
-      - id
-      - type
-      - slug
-      - name
-      - createdAt
-      additionalProperties: false
-    AutomationTriggerState:
-      type: object
-      properties:
-        api:
-          type: boolean
-        email:
-          type: boolean
-        manual:
-          type: boolean
-        cron:
-          type: boolean
-      required:
-      - api
-      - email
-      - manual
-      - cron
-      additionalProperties: false
-    AutomationTriggersResponse:
-      type: object
-      properties:
-        automationId:
-          type: string
-        type:
-          $ref: '#/components/schemas/AutomationType'
-        triggers:
-          $ref: '#/components/schemas/AutomationTriggerState'
-      required:
-      - automationId
-      - type
-      - triggers
       additionalProperties: false
     AutomationSummary:
       type: object
@@ -661,50 +603,108 @@ components:
       - code
       - severity
       additionalProperties: false
-    ApiErrorEnvelope:
+    AutomationVersion:
       type: object
       properties:
-        issues:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApiErrorIssue'
-        requestId:
+        id:
           type: string
-          description: Request id echoed via the x-request-id header
-        hint:
-          description: Suggested fix for known error patterns
+        automationId:
           type: string
-        docsUrl:
-          description: Link to relevant docs
-          type: string
+        version:
+          anyOf:
+          - type: string
+          - type: 'null'
+        sourceRef:
+          anyOf:
+          - type: string
+          - type: 'null'
+        isCurrent:
+          type: boolean
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
       required:
-      - issues
-      - requestId
+      - id
+      - automationId
+      - version
       additionalProperties: false
-    ListAutomationsResponse:
+    AutomationType:
+      type: string
+      enum:
+      - workflow
+      - agent
+    AutomationDetail:
       type: object
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/AutomationSummary'
-        total:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        limit:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        offset:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
+        id:
+          type: string
+          description: Implementation id for the automation. Workflow automations use workflow ids; agent automations use agent workflow ids.
+        type:
+          $ref: '#/components/schemas/AutomationType'
+        slug:
+          type: string
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+        status:
+          type: string
+        version:
+          anyOf:
+          - type: string
+          - type: 'null'
+        triggers:
+          $ref: '#/components/schemas/AutomationTriggerState'
+        implementationAvailable:
+          description: False when the automations registry row exists but the workflow/agent implementation row is missing.
+          type: boolean
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+        updatedAt:
+          anyOf:
+          - type: string
+          - type: string
+        inputSchema:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        outputSchema:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
       required:
-      - data
-      - total
-      - limit
-      - offset
+      - id
+      - type
+      - slug
+      - name
+      - createdAt
+      additionalProperties: false
+    AutomationTriggersResponse:
+      type: object
+      properties:
+        automationId:
+          type: string
+        type:
+          $ref: '#/components/schemas/AutomationType'
+        triggers:
+          $ref: '#/components/schemas/AutomationTriggerState'
+      required:
+      - automationId
+      - type
+      - triggers
       additionalProperties: false
   securitySchemes:
     bearerAuth:

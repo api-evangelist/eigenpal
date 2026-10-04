@@ -843,138 +843,6 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
-    RunReviewExpectedFileUpdateRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          description: New corrected file name.
-      required:
-      - name
-      description: Rename one corrected file.
-    RunReviewHealthBucket:
-      type: object
-      properties:
-        start:
-          type: string
-        end:
-          type: string
-        totalRuns:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        reviewedRuns:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Runs with a ranked verdict (`correct` or `incorrect`). Null verdict (nit) is excluded.
-        reviewCoverage:
-          anyOf:
-          - type: number
-          - type: 'null'
-        correctReviews:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        incorrectReviews:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        nitReviews:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Runs with a review row and null verdict (nit). Excluded from review coverage and accuracy.
-        reviewedCorrectness:
-          anyOf:
-          - type: number
-          - type: 'null'
-      required:
-      - start
-      - end
-      - totalRuns
-      - reviewedRuns
-      - reviewCoverage
-      - correctReviews
-      - incorrectReviews
-      - nitReviews
-      - reviewedCorrectness
-      additionalProperties: false
-    RunReviewHealthResponse:
-      type: object
-      properties:
-        timeRange:
-          type: object
-          properties:
-            from:
-              type: string
-            to:
-              type: string
-          required:
-          - from
-          - to
-          additionalProperties: false
-        granularity:
-          type: object
-          properties:
-            bucket:
-              type: string
-              enum:
-              - day
-              - week
-              - month
-            rollingWindow:
-              type: integer
-              minimum: -9007199254740991
-              maximum: 9007199254740991
-            minRollingReviews:
-              type: integer
-              minimum: -9007199254740991
-              maximum: 9007199254740991
-          required:
-          - bucket
-          - rollingWindow
-          - minRollingReviews
-          additionalProperties: false
-        summary:
-          $ref: '#/components/schemas/RunReviewHealthSummary'
-        buckets:
-          type: array
-          items:
-            $ref: '#/components/schemas/RunReviewHealthBucket'
-        rolling:
-          type: array
-          items:
-            $ref: '#/components/schemas/RunReviewHealthRollingPoint'
-      required:
-      - timeRange
-      - granularity
-      - summary
-      - buckets
-      - rolling
-      additionalProperties: false
-    RunReviewExpectedArtifacts:
-      type: object
-      properties:
-        files:
-          type: array
-          items:
-            $ref: '#/components/schemas/RunFile'
-          description: Corrected artifact files attached to the run review. Corrected JSON output lives on the review object at GET /runs/{id}/reviews.
-      required:
-      - files
-      additionalProperties: false
-    RunReviewDetail:
-      type: object
-      properties:
-        review:
-          anyOf:
-          - $ref: '#/components/schemas/RunReview'
-          - type: 'null'
-          description: Review metadata and corrections. Corrected files are listed separately at GET /runs/{id}/reviews/expected.
-      required:
-      - review
-      additionalProperties: false
     RunReviewRequest:
       type: object
       properties:
@@ -1037,25 +905,239 @@ components:
             - kind
             - path
       description: Create or replace review metadata for a run. Attribution fields (`reviewedBy`, `closedBy`, and their emails) are read-only and populated from the authenticated user or API key creator.
-    ApiErrorEnvelope:
+    RunReviewHealthResponse:
       type: object
       properties:
-        issues:
+        timeRange:
+          type: object
+          properties:
+            from:
+              type: string
+            to:
+              type: string
+          required:
+          - from
+          - to
+          additionalProperties: false
+        granularity:
+          type: object
+          properties:
+            bucket:
+              type: string
+              enum:
+              - day
+              - week
+              - month
+            rollingWindow:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            minRollingReviews:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+          required:
+          - bucket
+          - rollingWindow
+          - minRollingReviews
+          additionalProperties: false
+        summary:
+          $ref: '#/components/schemas/RunReviewHealthSummary'
+        buckets:
           type: array
           items:
-            $ref: '#/components/schemas/ApiErrorIssue'
-        requestId:
+            $ref: '#/components/schemas/RunReviewHealthBucket'
+        rolling:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunReviewHealthRollingPoint'
+      required:
+      - timeRange
+      - granularity
+      - summary
+      - buckets
+      - rolling
+      additionalProperties: false
+    RunReviewCorrection:
+      type: object
+      properties:
+        id:
           type: string
-          description: Request id echoed via the x-request-id header
-        hint:
-          description: Suggested fix for known error patterns
+        kind:
           type: string
-        docsUrl:
-          description: Link to relevant docs
+          enum:
+          - field
+          - file
+        path:
+          type: string
+          description: JSON Pointer for field corrections, or canonical artifact path for file reviews.
+        label:
+          anyOf:
+          - type: string
+          - type: 'null'
+        originalValue:
+          anyOf:
+          - {}
+          - type: 'null'
+        correctedValue:
+          anyOf:
+          - {}
+          - type: 'null'
+        note:
+          type: string
+        correctedArtifactPath:
+          anyOf:
+          - type: string
+          - type: 'null'
+        createdAt:
+          type: string
+        updatedAt:
           type: string
       required:
-      - issues
-      - requestId
+      - id
+      - kind
+      - path
+      - label
+      - note
+      - createdAt
+      - updatedAt
+      additionalProperties: false
+    RunReviewHealthRollingPoint:
+      type: object
+      properties:
+        at:
+          type: string
+        reviewedRuns:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs with a ranked verdict (`correct` or `incorrect`). Null verdict (nit) is excluded.
+        correctReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        reviewedCorrectness:
+          type: number
+        confidenceLower:
+          type: number
+        confidenceUpper:
+          type: number
+        totalRunsInWindow:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Total production runs in the rolling window ending at this point.
+        reviewCoverage:
+          type: number
+          description: Share of runs in the rolling window that were reviewed (0-1). Uses the same window size as rolling accuracy, applied to all runs.
+      required:
+      - at
+      - reviewedRuns
+      - correctReviews
+      - reviewedCorrectness
+      - confidenceLower
+      - confidenceUpper
+      - totalRunsInWindow
+      - reviewCoverage
+      additionalProperties: false
+    PromoteRunRequest:
+      type: object
+      properties:
+        name:
+          description: Dataset example name to create or update. Defaults to a generated name when omitted.
+          type: string
+          minLength: 1
+          maxLength: 128
+      description: Create or update a dataset example from the run input, actual output, and review corrections.
+    RunReviewHealthBucket:
+      type: object
+      properties:
+        start:
+          type: string
+        end:
+          type: string
+        totalRuns:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        reviewedRuns:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs with a ranked verdict (`correct` or `incorrect`). Null verdict (nit) is excluded.
+        reviewCoverage:
+          anyOf:
+          - type: number
+          - type: 'null'
+        correctReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        incorrectReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        nitReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs with a review row and null verdict (nit). Excluded from review coverage and accuracy.
+        reviewedCorrectness:
+          anyOf:
+          - type: number
+          - type: 'null'
+      required:
+      - start
+      - end
+      - totalRuns
+      - reviewedRuns
+      - reviewCoverage
+      - correctReviews
+      - incorrectReviews
+      - nitReviews
+      - reviewedCorrectness
+      additionalProperties: false
+    RunReviewExpectedFileUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          description: Corrected artifact file to upload.
+          format: binary
+        name:
+          description: Optional stored corrected file name. Defaults to the uploaded filename.
+          type: string
+      required:
+      - file
+    RunReviewExpectedArtifacts:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunFile'
+          description: Corrected artifact files attached to the run review. Corrected JSON output lives on the review object at GET /runs/{id}/reviews.
+      required:
+      - files
+      additionalProperties: false
+    RunReviewDetail:
+      type: object
+      properties:
+        review:
+          anyOf:
+          - $ref: '#/components/schemas/RunReview'
+          - type: 'null'
+          description: Review metadata and corrections. Corrected files are listed separately at GET /runs/{id}/reviews/expected.
+      required:
+      - review
+      additionalProperties: false
+    RunFile:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+      - name
       additionalProperties: false
     RunReviewHealthConfidence:
       type: object
@@ -1077,47 +1159,25 @@ components:
       - method
       additionalProperties: false
       description: Wilson score confidence interval for reviewed correctness. Null bounds mean there are no reviewed runs in the sample.
-    RunReviewExpectedFileMutationResponse:
-      description: Corrected file created or renamed by the request.
-      $ref: '#/components/schemas/RunFile'
-    RunReviewExpectedFileUpdateResponse:
-      description: Corrected file after the rename.
-      $ref: '#/components/schemas/RunFile'
-    RunReviewExpectedFileCopyRequest:
+    ApiErrorEnvelope:
       type: object
       properties:
-        outputFileName:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
           type: string
-          description: Name of an existing run output file to copy into corrected artifacts.
-        expectedName:
-          description: Optional name for the copied corrected file. Defaults to the original output file name.
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
           type: string
       required:
-      - outputFileName
-      description: JSON request body for copying one run output file into the corrected artifact set.
-    ApiErrorIssue:
-      type: object
-      properties:
-        field:
-          type: string
-          description: JSON path of the offending field, or "<root>"
-        message:
-          type: string
-          description: Human-readable error message
-        code:
-          type: string
-          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
-        severity:
-          type: string
-          enum:
-          - error
-          - warning
-          description: Issue severity
-      required:
-      - field
-      - message
-      - code
-      - severity
+      - issues
+      - requestId
       additionalProperties: false
     PromoteRunResponse:
       type: object
@@ -1145,6 +1205,69 @@ components:
       - exampleId
       - name
       additionalProperties: false
+    RunReviewExpectedFileMutationResponse:
+      description: Corrected file created or renamed by the request.
+      $ref: '#/components/schemas/RunFile'
+    RunReviewHealthSummary:
+      type: object
+      properties:
+        totalRuns:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        reviewedRuns:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs with a ranked verdict (`correct` or `incorrect`). Null verdict (nit) is excluded.
+        reviewCoverage:
+          anyOf:
+          - type: number
+          - type: 'null'
+        correctReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        incorrectReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        nitReviews:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs with a review row and null verdict (nit). Excluded from review coverage and accuracy.
+        reviewedCorrectness:
+          anyOf:
+          - type: number
+          - type: 'null'
+        confidence:
+          $ref: '#/components/schemas/RunReviewHealthConfidence'
+      required:
+      - totalRuns
+      - reviewedRuns
+      - reviewCoverage
+      - correctReviews
+      - incorrectReviews
+      - nitReviews
+      - reviewedCorrectness
+      - confidence
+      additionalProperties: false
+    RunReviewExpectedFileCopyRequest:
+      type: object
+      properties:
+        outputFileName:
+          type: string
+          description: Name of an existing run output file to copy into corrected artifacts.
+        expectedName:
+          description: Optional name for the copied corrected file. Defaults to the original output file name.
+          type: string
+      required:
+      - outputFileName
+      description: JSON request body for copying one run output file into the corrected artifact set.
+    RunReviewExpectedFileUpdateResponse:
+      description: Corrected file after the rename.
+      $ref: '#/components/schemas/RunFile'
     RunReview:
       type: object
       properties:
@@ -1223,162 +1346,39 @@ components:
       - updatedAt
       - corrections
       additionalProperties: false
-    RunReviewHealthRollingPoint:
+    ApiErrorIssue:
       type: object
       properties:
-        at:
+        field:
           type: string
-        reviewedRuns:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Runs with a ranked verdict (`correct` or `incorrect`). Null verdict (nit) is excluded.
-        correctReviews:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        reviewedCorrectness:
-          type: number
-        confidenceLower:
-          type: number
-        confidenceUpper:
-          type: number
-        totalRunsInWindow:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Total production runs in the rolling window ending at this point.
-        reviewCoverage:
-          type: number
-          description: Share of runs in the rolling window that were reviewed (0-1). Uses the same window size as rolling accuracy, applied to all runs.
-      required:
-      - at
-      - reviewedRuns
-      - correctReviews
-      - reviewedCorrectness
-      - confidenceLower
-      - confidenceUpper
-      - totalRunsInWindow
-      - reviewCoverage
-      additionalProperties: false
-    RunFile:
-      type: object
-      properties:
-        name:
+          description: JSON path of the offending field, or "<root>"
+        message:
           type: string
-      required:
-      - name
-      additionalProperties: false
-    RunReviewCorrection:
-      type: object
-      properties:
-        id:
+          description: Human-readable error message
+        code:
           type: string
-        kind:
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
           type: string
           enum:
-          - field
-          - file
-        path:
-          type: string
-          description: JSON Pointer for field corrections, or canonical artifact path for file reviews.
-        label:
-          anyOf:
-          - type: string
-          - type: 'null'
-        originalValue:
-          anyOf:
-          - {}
-          - type: 'null'
-        correctedValue:
-          anyOf:
-          - {}
-          - type: 'null'
-        note:
-          type: string
-        correctedArtifactPath:
-          anyOf:
-          - type: string
-          - type: 'null'
-        createdAt:
-          type: string
-        updatedAt:
-          type: string
+          - error
+          - warning
+          description: Issue severity
       required:
-      - id
-      - kind
-      - path
-      - label
-      - note
-      - createdAt
-      - updatedAt
+      - field
+      - message
+      - code
+      - severity
       additionalProperties: false
-    RunReviewHealthSummary:
-      type: object
-      properties:
-        totalRuns:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        reviewedRuns:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Runs with a ranked verdict (`correct` or `incorrect`). Null verdict (nit) is excluded.
-        reviewCoverage:
-          anyOf:
-          - type: number
-          - type: 'null'
-        correctReviews:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        incorrectReviews:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        nitReviews:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Runs with a review row and null verdict (nit). Excluded from review coverage and accuracy.
-        reviewedCorrectness:
-          anyOf:
-          - type: number
-          - type: 'null'
-        confidence:
-          $ref: '#/components/schemas/RunReviewHealthConfidence'
-      required:
-      - totalRuns
-      - reviewedRuns
-      - reviewCoverage
-      - correctReviews
-      - incorrectReviews
-      - nitReviews
-      - reviewedCorrectness
-      - confidence
-      additionalProperties: false
-    RunReviewExpectedFileUploadRequest:
-      type: object
-      properties:
-        file:
-          type: string
-          description: Corrected artifact file to upload.
-          format: binary
-        name:
-          description: Optional stored corrected file name. Defaults to the uploaded filename.
-          type: string
-      required:
-      - file
-    PromoteRunRequest:
+    RunReviewExpectedFileUpdateRequest:
       type: object
       properties:
         name:
-          description: Dataset example name to create or update. Defaults to a generated name when omitted.
           type: string
-          minLength: 1
-          maxLength: 128
-      description: Create or update a dataset example from the run input, actual output, and review corrections.
+          description: New corrected file name.
+      required:
+      - name
+      description: Rename one corrected file.
   securitySchemes:
     bearerAuth:
       type: http
