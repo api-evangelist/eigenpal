@@ -1,0 +1,26 @@
+slug: eigenpal
+provider: Eigenpal
+generated_by: planning/capability-mapping/scripts/classify_capabilities.py
+model: claude-opus-5
+frame:
+- Software & Technology
+min_confidence: 0.7
+capability_model:
+  source: https://github.com/vincentmakes/turbo-ea-capabilities
+  license: CC-BY-4.0
+  attribution: Turbo EA Capabilities by Vincent Verdet — Turbo EA, https://github.com/vincentmakes/turbo-ea-capabilities,
+    CC BY 4.0
+  notice: NOTICE
+edge_count: 1
+edges:
+- tag: Evaluation
+  spec_file: eigenpal-evaluation-api-openapi.yml
+  capability_id: BC-610.60
+  capability_id_l1: BC-610
+  capability_name: Artificial Intelligence Management
+  confidence: 0.72
+  evidence: '''Get evaluators'' / ''Replace evaluators''; ''Create dataset example''; schemas ExperimentCreate,
+    EvalResult, DatasetExample'
+  reason: Datasets of labelled examples, evaluators and experiments producing EvalResult are the evaluation
+    loop of an AI extraction system — AI/ML model lifecycle and MLOps practice. Could alternatively be
+    read as software quality engineering, hence not higher.
