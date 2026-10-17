@@ -81,30 +81,6 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
-    ApiErrorIssue:
-      type: object
-      properties:
-        field:
-          type: string
-          description: JSON path of the offending field, or "<root>"
-        message:
-          type: string
-          description: Human-readable error message
-        code:
-          type: string
-          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
-        severity:
-          type: string
-          enum:
-          - error
-          - warning
-          description: Issue severity
-      required:
-      - field
-      - message
-      - code
-      - severity
-      additionalProperties: false
     AuthCheckResponse:
       type: object
       properties:
@@ -170,6 +146,30 @@ components:
       required:
       - issues
       - requestId
+      additionalProperties: false
+    ApiErrorIssue:
+      type: object
+      properties:
+        field:
+          type: string
+          description: JSON path of the offending field, or "<root>"
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
+      required:
+      - field
+      - message
+      - code
+      - severity
       additionalProperties: false
   securitySchemes:
     bearerAuth:
