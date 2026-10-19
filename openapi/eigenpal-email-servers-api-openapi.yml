@@ -1,0 +1,982 @@
+openapi: 3.2.0
+info:
+  title: Eigenpal Email servers API
+  version: 1.0.0
+  description: Public REST API for inspecting automations, starting and monitoring runs, managing files, collecting human reviews, and running evaluations.
+  contact:
+    name: Eigenpal
+    url: https://eigenpal.com
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://api.eigenpal.com
+  description: Production (canonical API hostname)
+security:
+- bearerAuth: []
+tags:
+- name: Email servers
+  description: Create and manage outbound email servers for workflow mail. Secrets are encrypted at rest and never returned.
+paths:
+  /v1/email-servers:
+    get:
+      operationId: emailServers.list
+      summary: List email servers
+      description: List outbound email servers for the current workspace. Secrets are never returned; each server includes configuration flags instead of credentials.
+      tags:
+      - Email servers
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          description: Maximum number of email servers to return (1–100).
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: Maximum number of email servers to return (1–100).
+      - in: query
+        name: offset
+        schema:
+          description: Zero-based offset for paging through email servers.
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        description: Zero-based offset for paging through email servers.
+      responses:
+        '200':
+          description: Page of email servers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEmailServersResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    post:
+      operationId: emailServers.create
+      summary: Create email server
+      description: Create an outbound email server. Secrets are encrypted at rest and never returned. Names must be unique among live servers in the workspace.
+      tags:
+      - Email servers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEmailServerRequest'
+      responses:
+        '201':
+          description: Created email server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailServer'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '409':
+          description: Conflict. The resource is in a state that forbids the request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/email-servers/{id}:
+    get:
+      operationId: emailServers.get
+      summary: Get email server
+      description: Inspect a stored outbound email server. Cross-tenant and deleted ids are indistinguishable from missing. Secrets are never returned.
+      tags:
+      - Email servers
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          maxLength: 128
+          pattern: ^ems_[A-Za-z0-9_-]+$
+          description: Email server id (`ems_…`).
+        required: true
+        description: Email server id (`ems_…`).
+      responses:
+        '200':
+          description: Email server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailServer'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    patch:
+      operationId: emailServers.update
+      summary: Update email server
+      description: Rename, enable/disable, or replace transport configuration. Omitted secrets are retained only when the existing transport is compatible and, for SMTP, the host and username are unchanged. Changing transport or SMTP destination requires a complete valid target; a new password or explicit auth clearing is required when host or username changes.
+      tags:
+      - Email servers
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          maxLength: 128
+          pattern: ^ems_[A-Za-z0-9_-]+$
+          description: Email server id (`ems_…`).
+        required: true
+        description: Email server id (`ems_…`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmailServerRequest'
+      responses:
+        '200':
+          description: Updated email server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailServer'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '409':
+          description: Conflict. The resource is in a state that forbids the request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    delete:
+      operationId: emailServers.delete
+      summary: Delete email server
+      description: Soft-delete an outbound email server. Deleted ids are indistinguishable from missing.
+      tags:
+      - Email servers
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          maxLength: 128
+          pattern: ^ems_[A-Za-z0-9_-]+$
+          description: Email server id (`ems_…`).
+        required: true
+        description: Email server id (`ems_…`).
+      responses:
+        '200':
+          description: Email server deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteEmailServerResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/email-servers/{id}/test:
+    post:
+      operationId: emailServers.test
+      summary: Test email server
+      description: Send a concise connectivity email through the selected stored server. Disabled servers conflict. Provider failures are returned as a generic outcome and never include credentials or the test recipient.
+      tags:
+      - Email servers
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          maxLength: 128
+          pattern: ^ems_[A-Za-z0-9_-]+$
+          description: Email server id (`ems_…`).
+        required: true
+        description: Email server id (`ems_…`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestEmailServerRequest'
+      responses:
+        '200':
+          description: Test send result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestEmailServerResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '409':
+          description: Conflict. The resource is in a state that forbids the request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+components:
+  schemas:
+    TestEmailServerResponse:
+      oneOf:
+      - type: object
+        properties:
+          ok:
+            type: boolean
+            const: true
+          transport:
+            type: string
+            enum:
+            - resend
+            - smtp
+          messageId:
+            type: string
+            minLength: 1
+        required:
+        - ok
+        - transport
+        - messageId
+        additionalProperties: false
+      - type: object
+        properties:
+          ok:
+            type: boolean
+            const: false
+          error:
+            type: string
+            minLength: 1
+        required:
+        - ok
+        - error
+        additionalProperties: false
+      type: object
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+        conflictingWorkflowId:
+          description: Present on 409 workflow_name_conflict responses. Id of the workflow that already owns the requested name.
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
+    ApiErrorIssue:
+      type: object
+      properties:
+        field:
+          type: string
+          description: JSON path of the offending field, or "<root>"
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
+      required:
+      - field
+      - message
+      - code
+      - severity
+      additionalProperties: false
+    ListEmailServersResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailServer'
+        total:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        limit:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        offset:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+      - data
+      - total
+      - limit
+      - offset
+      additionalProperties: false
+    PublicResendEmailServer:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 128
+          pattern: ^ems_[A-Za-z0-9_-]+$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        enabled:
+          type: boolean
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+        updatedAt:
+          anyOf:
+          - type: string
+          - type: string
+        transport:
+          type: string
+          const: resend
+        fromEmail:
+          type: string
+          format: email
+          pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+        fromName:
+          type: string
+          minLength: 1
+          maxLength: 128
+        apiKeyConfigured:
+          type: boolean
+          const: true
+      required:
+      - id
+      - name
+      - enabled
+      - createdAt
+      - updatedAt
+      - transport
+      - fromEmail
+      - fromName
+      - apiKeyConfigured
+      additionalProperties: false
+    CreateEmailServerRequest:
+      oneOf:
+      - type: object
+        properties:
+          name:
+            type: string
+            minLength: 1
+            maxLength: 128
+          enabled:
+            default: true
+            type: boolean
+          transport:
+            type: string
+            const: resend
+          apiKey:
+            type: string
+            minLength: 1
+          fromEmail:
+            type: string
+            format: email
+            pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+          fromName:
+            type: string
+            minLength: 1
+            maxLength: 128
+        required:
+        - name
+        - transport
+        - apiKey
+        - fromEmail
+        - fromName
+        additionalProperties: false
+      - type: object
+        properties:
+          name:
+            type: string
+            minLength: 1
+            maxLength: 128
+          enabled:
+            default: true
+            type: boolean
+          transport:
+            type: string
+            const: smtp
+          host:
+            type: string
+            minLength: 1
+            maxLength: 253
+          port:
+            type: integer
+            minimum: 1
+            maximum: 65535
+          security:
+            default: starttls
+            type: string
+            enum:
+            - starttls
+            - tls
+            - none
+          username:
+            type: string
+            minLength: 1
+            maxLength: 256
+          password:
+            type: string
+            minLength: 1
+          caPem:
+            type: string
+            minLength: 1
+          fromEmail:
+            type: string
+            format: email
+            pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+          fromName:
+            type: string
+            minLength: 1
+            maxLength: 128
+        required:
+        - name
+        - transport
+        - host
+        - fromEmail
+        - fromName
+        additionalProperties: false
+      type: object
+    UpdateEmailServerRequest:
+      anyOf:
+      - type: object
+        properties:
+          name:
+            type: string
+            minLength: 1
+            maxLength: 128
+          enabled:
+            type: boolean
+          transport:
+            type: string
+            const: resend
+          apiKey:
+            type: string
+            minLength: 1
+          fromEmail:
+            type: string
+            format: email
+            pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+          fromName:
+            type: string
+            minLength: 1
+            maxLength: 128
+        required:
+        - transport
+        - fromEmail
+        - fromName
+        additionalProperties: false
+      - type: object
+        properties:
+          name:
+            type: string
+            minLength: 1
+            maxLength: 128
+          enabled:
+            type: boolean
+          transport:
+            type: string
+            const: smtp
+          host:
+            type: string
+            minLength: 1
+            maxLength: 253
+          port:
+            type: integer
+            minimum: 1
+            maximum: 65535
+          security:
+            type: string
+            enum:
+            - starttls
+            - tls
+            - none
+          username:
+            anyOf:
+            - type: string
+              minLength: 1
+              maxLength: 256
+            - type: 'null'
+          password:
+            type: string
+            minLength: 1
+          caPem:
+            anyOf:
+            - type: string
+              minLength: 1
+            - type: 'null'
+          fromEmail:
+            type: string
+            format: email
+            pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+          fromName:
+            type: string
+            minLength: 1
+            maxLength: 128
+        required:
+        - transport
+        - host
+        - port
+        - security
+        - fromEmail
+        - fromName
+        additionalProperties: false
+      - type: object
+        properties:
+          name:
+            type: string
+            minLength: 1
+            maxLength: 128
+          enabled:
+            type: boolean
+        additionalProperties: false
+    EmailServer:
+      oneOf:
+      - $ref: '#/components/schemas/PublicResendEmailServer'
+      - $ref: '#/components/schemas/PublicSmtpEmailServer'
+      type: object
+      discriminator:
+        propertyName: transport
+        mapping:
+          resend: '#/components/schemas/PublicResendEmailServer'
+          smtp: '#/components/schemas/PublicSmtpEmailServer'
+    PublicSmtpEmailServer:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 128
+          pattern: ^ems_[A-Za-z0-9_-]+$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        enabled:
+          type: boolean
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+        updatedAt:
+          anyOf:
+          - type: string
+          - type: string
+        transport:
+          type: string
+          const: smtp
+        fromEmail:
+          type: string
+          format: email
+          pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+        fromName:
+          type: string
+          minLength: 1
+          maxLength: 128
+        host:
+          type: string
+          minLength: 1
+          maxLength: 253
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        security:
+          type: string
+          enum:
+          - starttls
+          - tls
+          - none
+        username:
+          anyOf:
+          - type: string
+          - type: 'null'
+        passwordConfigured:
+          type: boolean
+        caPemConfigured:
+          type: boolean
+      required:
+      - id
+      - name
+      - enabled
+      - createdAt
+      - updatedAt
+      - transport
+      - fromEmail
+      - fromName
+      - host
+      - port
+      - security
+      - username
+      - passwordConfigured
+      - caPemConfigured
+      additionalProperties: false
+    DeleteEmailServerResponse:
+      type: object
+      properties:
+        deleted:
+          type: boolean
+          const: true
+        id:
+          type: string
+          maxLength: 128
+          pattern: ^ems_[A-Za-z0-9_-]+$
+      required:
+      - deleted
+      - id
+      additionalProperties: false
+    TestEmailServerRequest:
+      type: object
+      properties:
+        to:
+          type: string
+          format: email
+          pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+      required:
+      - to
+      additionalProperties: false
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'API key issued from Settings → API Keys. Pass as `Authorization: Bearer <key>`.'

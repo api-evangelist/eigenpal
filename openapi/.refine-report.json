@@ -1,30 +1,29 @@
 {
   "provider": "eigenpal",
   "sources": [
-    "_original/eigenpal-openapi-original.json"
+    "_original/eigenpal-openapi.json"
   ],
   "outputs": [
     "eigenpal-automations-api-openapi.yml",
+    "eigenpal-email-servers-api-openapi.yml",
     "eigenpal-evaluation-api-openapi.yml",
     "eigenpal-files-api-openapi.yml",
+    "eigenpal-folders-api-openapi.yml",
+    "eigenpal-human-reviews-api-openapi.yml",
     "eigenpal-metadata-api-openapi.yml",
+    "eigenpal-models-api-openapi.yml",
     "eigenpal-reviews-api-openapi.yml",
-    "eigenpal-runs-api-openapi.yml"
+    "eigenpal-runs-api-openapi.yml",
+    "eigenpal-templates-api-openapi.yml"
   ],
   "archived": [],
   "errors": [],
   "warnings": [],
   "notes": [
     "sourced from openapi/_original/ (1 archived document(s)); previously refined output at the top level was skipped rather than re-split",
-    "eigenpal-openapi-original.json: upgraded openapi 3.1.0 -> OpenAPI 3.2.0",
-    "apis.yml register: already-registered"
+    "eigenpal-openapi.json: upgraded openapi 3.1.0 -> OpenAPI 3.2.0",
+    "eigenpal-openapi.json: declared missing tag: Human reviews",
+    "apis.yml register: written (+5 apis, 11 total)"
   ],
-  "skipped": [
-    "eigenpal-automations-api-openapi.yml: previously refined output, superseded by openapi/_original/",
-    "eigenpal-evaluation-api-openapi.yml: previously refined output, superseded by openapi/_original/",
-    "eigenpal-files-api-openapi.yml: previously refined output, superseded by openapi/_original/",
-    "eigenpal-metadata-api-openapi.yml: previously refined output, superseded by openapi/_original/",
-    "eigenpal-reviews-api-openapi.yml: previously refined output, superseded by openapi/_original/",
-    "eigenpal-runs-api-openapi.yml: previously refined output, superseded by openapi/_original/"
-  ]
+  "skipped": []
 }

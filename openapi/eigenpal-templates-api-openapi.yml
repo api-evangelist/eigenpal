@@ -1,0 +1,991 @@
+openapi: 3.2.0
+info:
+  title: Eigenpal Templates API
+  version: 1.0.0
+  description: Public REST API for inspecting automations, starting and monitoring runs, managing files, collecting human reviews, and running evaluations.
+  contact:
+    name: Eigenpal
+    url: https://eigenpal.com
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://api.eigenpal.com
+  description: Production (canonical API hostname)
+security:
+- bearerAuth: []
+tags:
+- name: Templates
+  description: Upload, inspect, version, download, and delete tenant-scoped DOCX and XLSX templates.
+paths:
+  /v1/templates:
+    get:
+      operationId: templates.list
+      summary: List templates
+      description: List tenant-scoped DOCX and XLSX template resources.
+      tags:
+      - Templates
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      responses:
+        '200':
+          description: Template resources
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListTemplatesResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    post:
+      operationId: templates.create
+      summary: Upload template
+      description: Create a stable `tmpl_…` resource and its first immutable content revision from a reusable `fileId`. Public SDK helpers `create(file)` and `createFromFileId(fileId)` upload through the Files API when needed, then send this JSON body. Generated clients send `{ fileId }` JSON only. The HTTP route still accepts a multipart `file` for CLI/internal use; that path is not generated into the public SDKs.
+      tags:
+      - Templates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateFileReferenceRequest'
+      responses:
+        '201':
+          description: Created template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedTemplate'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '422':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/templates/{id}:
+    get:
+      operationId: templates.get
+      summary: Inspect template
+      description: Get template metadata, checksum, discovered tokens, grammar capabilities, and current immutable revision. Storage keys are never exposed.
+      tags:
+      - Templates
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^tmpl_[A-Za-z0-9_-]{21}$
+          description: Logical template id (tmpl_…).
+        required: true
+        description: Logical template id (tmpl_…).
+      responses:
+        '200':
+          description: Template inspection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    put:
+      operationId: templates.replace
+      summary: Create template revision
+      description: Append an immutable revision and advance the logical template pointer from a reusable `fileId`. Public SDK helpers `replace(file)` and `replaceFromFileId(fileId)` upload through the Files API when needed, then send this JSON body. Generated clients send `{ fileId }` JSON only. The HTTP route still accepts a multipart `file` for CLI/internal use; that path is not generated into the public SDKs.
+      tags:
+      - Templates
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^tmpl_[A-Za-z0-9_-]{21}$
+          description: Logical template id (tmpl_…).
+        required: true
+        description: Logical template id (tmpl_…).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateReplaceRequest'
+      responses:
+        '200':
+          description: Updated template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '422':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    delete:
+      operationId: templates.delete
+      summary: Delete template
+      description: Delete the mutable logical template. Immutable revisions are retained so workflows pinned with `templateRevisionId` continue to execute; unpinned workflows can no longer resolve the deleted `tmpl_…` id.
+      tags:
+      - Templates
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^tmpl_[A-Za-z0-9_-]{21}$
+          description: Logical template id (tmpl_…).
+        required: true
+        description: Logical template id (tmpl_…).
+      responses:
+        '200':
+          description: Template deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteTemplateResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/templates/{id}/content:
+    get:
+      operationId: templates.content.get
+      summary: Download template content
+      description: Download current bytes while the logical template exists, or a specific immutable revision using `revisionId`. Pinned revision downloads remain available after logical template deletion. Large objects may 302 to a short-lived signed storage URL.
+      tags:
+      - Templates
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^tmpl_[A-Za-z0-9_-]{21}$
+          description: Logical template id (tmpl_…).
+        required: true
+        description: Logical template id (tmpl_…).
+      - in: query
+        name: revisionId
+        schema:
+          description: Immutable revision id (tmpr_…). Omit for the current content.
+          type: string
+          pattern: ^tmpr_[A-Za-z0-9_-]{21}$
+        description: Immutable revision id (tmpr_…). Omit for the current content.
+      responses:
+        '200':
+          description: Template binary content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                description: Template file bytes (DOCX or XLSX).
+                format: binary
+        '302':
+          description: Redirect to a short-lived signed storage download
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/templates/{id}/staging:
+    post:
+      operationId: templates.staging
+      summary: Finalize or hard-clean a staged template
+      description: Consume the one-time cleanupProof issued on a staged create. `finalize` makes the template live so later deletion keeps pinned revisions. `cleanup` hard-removes only unpublished resources from that staging attempt. Normal DELETE is unchanged and never takes this path.
+      tags:
+      - Templates
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^tmpl_[A-Za-z0-9_-]{21}$
+          description: Logical template id (tmpl_…).
+        required: true
+        description: Logical template id (tmpl_…).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateStagingRequest'
+      responses:
+        '200':
+          description: Staging action applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateStagingResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '409':
+          description: Conflict. The resource is in a state that forbids the request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+components:
+  schemas:
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+        conflictingWorkflowId:
+          description: Present on 409 workflow_name_conflict responses. Id of the workflow that already owns the requested name.
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
+    TemplateStagingRequest:
+      type: object
+      properties:
+        proof:
+          type: string
+          minLength: 16
+          maxLength: 128
+        action:
+          type: string
+          enum:
+          - cleanup
+          - finalize
+      required:
+      - proof
+      - action
+    ListTemplatesResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+        total:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      required:
+      - items
+      - total
+      additionalProperties: false
+    ApiErrorIssue:
+      type: object
+      properties:
+        field:
+          type: string
+          description: JSON path of the offending field, or "<root>"
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
+      required:
+      - field
+      - message
+      - code
+      - severity
+      additionalProperties: false
+    TemplateFileReferenceRequest:
+      type: object
+      properties:
+        fileId:
+          type: string
+          pattern: ^file_[A-Za-z0-9_-]{21}$
+          description: Reusable file id produced by the direct file upload flow. It is consumed as upload transport, not exposed as template identity.
+        name:
+          type: string
+        description:
+          type: string
+        staged:
+          description: When true, the create response includes a one-time cleanupProof for unpublished CLI staging. Normal uploads omit this.
+          type: boolean
+      required:
+      - fileId
+    DeleteTemplateResponse:
+      type: object
+      properties:
+        deleted:
+          type: boolean
+      required:
+      - deleted
+      additionalProperties: false
+    CreatedTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^tmpl_[A-Za-z0-9_-]{21}$
+          description: Stable logical template id (tmpl_…).
+        name:
+          type: string
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+        filename:
+          type: string
+        format:
+          type: string
+          enum:
+          - docx
+          - xlsx
+        mimeType:
+          type: string
+        size:
+          anyOf:
+          - type: integer
+            minimum: 0
+            maximum: 9007199254740991
+          - type: 'null'
+        sha256:
+          anyOf:
+          - type: string
+            minLength: 64
+            maxLength: 64
+          - type: 'null'
+        tokens:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              path:
+                type: array
+                items:
+                  type: string
+              kind:
+                type: string
+                enum:
+                - variable
+                - loop
+              type:
+                type: string
+                enum:
+                - string
+                - number
+                - date
+                - boolean
+                - array
+                - object
+              required:
+                type: boolean
+              description:
+                type: string
+            required:
+            - name
+            additionalProperties: false
+        grammar:
+          type: object
+          properties:
+            syntax:
+              type: string
+            tokenDiscovery:
+              type: boolean
+            capabilities:
+              type: array
+              items:
+                type: string
+          required:
+          - syntax
+          - tokenDiscovery
+          - capabilities
+          additionalProperties: false
+        currentRevision:
+          anyOf:
+          - $ref: '#/components/schemas/TemplateRevision'
+          - type: 'null'
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+        updatedAt:
+          anyOf:
+          - anyOf:
+            - type: string
+            - type: string
+          - type: 'null'
+        cleanupProof:
+          description: One-time proof to finalize or hard-clean this unpublished staged template. Returned only on staged create, never on GET or list.
+          type: string
+      required:
+      - id
+      - name
+      - filename
+      - format
+      - mimeType
+      - tokens
+      - grammar
+      - createdAt
+      additionalProperties: false
+    TemplateReplaceRequest:
+      type: object
+      properties:
+        fileId:
+          type: string
+          pattern: ^file_[A-Za-z0-9_-]{21}$
+          description: Reusable file id produced by the direct file upload flow. It is consumed as upload transport, not exposed as template identity.
+      required:
+      - fileId
+    TemplateStagingResponse:
+      type: object
+      properties:
+        cleaned:
+          type: boolean
+        finalized:
+          type: boolean
+      additionalProperties: false
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^tmpl_[A-Za-z0-9_-]{21}$
+          description: Stable logical template id (tmpl_…).
+        name:
+          type: string
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+        filename:
+          type: string
+        format:
+          type: string
+          enum:
+          - docx
+          - xlsx
+        mimeType:
+          type: string
+        size:
+          anyOf:
+          - type: integer
+            minimum: 0
+            maximum: 9007199254740991
+          - type: 'null'
+        sha256:
+          anyOf:
+          - type: string
+            minLength: 64
+            maxLength: 64
+          - type: 'null'
+        tokens:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              path:
+                type: array
+                items:
+                  type: string
+              kind:
+                type: string
+                enum:
+                - variable
+                - loop
+              type:
+                type: string
+                enum:
+                - string
+                - number
+                - date
+                - boolean
+                - array
+                - object
+              required:
+                type: boolean
+              description:
+                type: string
+            required:
+            - name
+            additionalProperties: false
+        grammar:
+          type: object
+          properties:
+            syntax:
+              type: string
+            tokenDiscovery:
+              type: boolean
+            capabilities:
+              type: array
+              items:
+                type: string
+          required:
+          - syntax
+          - tokenDiscovery
+          - capabilities
+          additionalProperties: false
+        currentRevision:
+          anyOf:
+          - $ref: '#/components/schemas/TemplateRevision'
+          - type: 'null'
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+        updatedAt:
+          anyOf:
+          - anyOf:
+            - type: string
+            - type: string
+          - type: 'null'
+      required:
+      - id
+      - name
+      - filename
+      - format
+      - mimeType
+      - tokens
+      - grammar
+      - createdAt
+      additionalProperties: false
+    TemplateRevision:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: ^tmpr_[A-Za-z0-9_-]{21}$
+          description: Immutable template revision id (tmpr_…).
+        number:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        sha256:
+          type: string
+          minLength: 64
+          maxLength: 64
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+      required:
+      - id
+      - number
+      - sha256
+      - createdAt
+      additionalProperties: false
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'API key issued from Settings → API Keys. Pass as `Authorization: Bearer <key>`.'

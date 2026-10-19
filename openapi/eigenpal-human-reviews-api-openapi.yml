@@ -1,0 +1,1054 @@
+openapi: 3.2.0
+info:
+  title: Eigenpal Human reviews API
+  version: 1.0.0
+  description: Public REST API for inspecting automations, starting and monitoring runs, managing files, collecting human reviews, and running evaluations.
+  contact:
+    name: Eigenpal
+    url: https://eigenpal.com
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://api.eigenpal.com
+  description: Production (canonical API hostname)
+security:
+- bearerAuth: []
+tags:
+- name: Human reviews
+paths:
+  /v1/human-reviews:
+    get:
+      operationId: humanReviews.list
+      summary: List pending human review tasks
+      description: Cursor-paginated queue of pending human-review tasks for the tenant, oldest first.
+      tags:
+      - Human reviews
+      parameters:
+      - in: query
+        name: automationId
+        schema:
+          type: string
+      - in: query
+        name: waitingBefore
+        schema:
+          type: string
+      - in: query
+        name: cursor
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      responses:
+        '200':
+          description: Pending review tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HumanReviewListResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/human-reviews/{taskId}:
+    get:
+      operationId: humanReviews.get
+      summary: Get human review task
+      description: Fetch one authorized human-review task with draft data, derived non-file input, files, and decisions.
+      tags:
+      - Human reviews
+      parameters:
+      - in: path
+        name: taskId
+        schema:
+          type: string
+          description: Human review task id
+        required: true
+        description: Human review task id
+      responses:
+        '200':
+          description: Human review task detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HumanReviewTaskResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/human-reviews/{taskId}/approve:
+    post:
+      operationId: humanReviews.approve
+      summary: Approve human review task
+      description: Approve a complete review task and resume the paused run. Requires every required field to be confirmed.
+      tags:
+      - Human reviews
+      parameters:
+      - in: path
+        name: taskId
+        schema:
+          type: string
+          description: Human review task id
+        required: true
+        description: Human review task id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expectedVersion:
+                  type: integer
+                  exclusiveMinimum: 0
+                  maximum: 9007199254740991
+              required:
+              - expectedVersion
+              additionalProperties: false
+      responses:
+        '200':
+          description: Approved task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HumanReviewApproveResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/human-reviews/{taskId}/fields:
+    put:
+      operationId: humanReviews.confirmField
+      summary: Confirm or edit a review field
+      description: Confirm or edit a scalar field using optimistic concurrency and a durable idempotency key.
+      tags:
+      - Human reviews
+      parameters:
+      - in: path
+        name: taskId
+        schema:
+          type: string
+          description: Human review task id
+        required: true
+        description: Human review task id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expectedVersion:
+                  type: integer
+                  exclusiveMinimum: 0
+                  maximum: 9007199254740991
+                idempotencyKey:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                path:
+                  type: string
+                value:
+                  anyOf:
+                  - type: string
+                  - type: number
+                  - type: boolean
+                  - type: 'null'
+                confirmed:
+                  default: true
+                  type: boolean
+              required:
+              - expectedVersion
+              - idempotencyKey
+              - path
+              - value
+              additionalProperties: false
+      responses:
+        '200':
+          description: Updated task after field confirmation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HumanReviewFieldResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/human-reviews/{taskId}/files/{fileId}/content:
+    get:
+      operationId: humanReviews.files.content.get
+      summary: Download human review task file
+      description: Download one file attached to a human-review task after strict tenant, task, and run ownership checks. Large cloud deployments may redirect to a short-lived signed storage URL.
+      tags:
+      - Human reviews
+      parameters:
+      - in: path
+        name: taskId
+        schema:
+          type: string
+          description: Human review task id
+        required: true
+        description: Human review task id
+      - in: path
+        name: fileId
+        schema:
+          type: string
+          description: File id listed on the review task
+        required: true
+        description: File id listed on the review task
+      responses:
+        '200':
+          description: Task file content
+        '302':
+          description: Redirect to a short-lived signed storage download
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/human-reviews/{taskId}/reject:
+    post:
+      operationId: humanReviews.reject
+      summary: Reject human review task
+      description: Reject a review task and fail the paused run with the supplied reason.
+      tags:
+      - Human reviews
+      parameters:
+      - in: path
+        name: taskId
+        schema:
+          type: string
+          description: Human review task id
+        required: true
+        description: Human review task id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expectedVersion:
+                  type: integer
+                  exclusiveMinimum: 0
+                  maximum: 9007199254740991
+                idempotencyKey:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 5000
+              required:
+              - expectedVersion
+              - idempotencyKey
+              - reason
+              additionalProperties: false
+      responses:
+        '200':
+          description: Rejected task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HumanReviewRejectResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+components:
+  schemas:
+    HumanReviewTaskDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        executionId:
+          type: string
+          minLength: 1
+        automationId:
+          type: string
+          minLength: 1
+        automationName:
+          type: string
+          minLength: 1
+        sourceKind:
+          type: string
+          enum:
+          - workflow_step
+          - agent_tool
+        sourceLabel:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+          - cancelled
+        requiredCount:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        confirmedCount:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        version:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        files:
+          type: array
+          items:
+            type: object
+            properties:
+              fileId:
+                type: string
+                minLength: 1
+              filename:
+                type: string
+                minLength: 1
+              mimeType:
+                type: string
+              size:
+                type: integer
+                minimum: 0
+                maximum: 9007199254740991
+              fieldName:
+                type: string
+              artifactPath:
+                type: string
+                minLength: 1
+              role:
+                description: run_input for authorized run input files; attachment for extra current-run files. Omitted on historical tasks and inferred at read time.
+                type: string
+                enum:
+                - run_input
+                - attachment
+            required:
+            - fileId
+            - filename
+            - artifactPath
+            additionalProperties: false
+        input:
+          anyOf:
+          - oneOf:
+            - type: object
+              properties:
+                status:
+                  type: string
+                  const: available
+                data:
+                  anyOf:
+                  - type: object
+                    propertyNames:
+                      type: string
+                    additionalProperties: {}
+                  - type: array
+                    items: {}
+              required:
+              - status
+              - data
+              additionalProperties: false
+            - type: object
+              properties:
+                status:
+                  type: string
+                  const: omitted_too_large
+              required:
+              - status
+              additionalProperties: false
+            type: object
+          - type: 'null'
+          description: Non-file trigger input derived at read time. Null when every field is a file or external source id. omitted_too_large when the projection exceeds the review data byte limit.
+        machineData:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: array
+            items: {}
+        draftData:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: array
+            items: {}
+        schema:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        fieldMetadata:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties:
+            type: object
+            properties:
+              confidence:
+                description: 'Routing confidence: categorical low|medium|high from ai.extract grounding, or legacy 0–1 numeric when authored. Numeric grounding scores from extract land in display.score instead. Not calibrated by Eigenpal.'
+                anyOf:
+                - type: number
+                  minimum: 0
+                  maximum: 1
+                - type: string
+                  enum:
+                  - low
+                  - medium
+                  - high
+                - type: string
+                  minLength: 1
+              label:
+                description: Short label shown in the review UI
+                type: string
+                maxLength: 500
+              description:
+                description: Longer reviewer guidance for this field
+                type: string
+                maxLength: 5000
+              review:
+                description: Legacy per-field override kept for existing tasks. Prefer selection.fields.review.
+                default: auto
+                type: string
+                enum:
+                - auto
+                - always
+                - never
+              display:
+                description: Opaque display metadata preserved for the review UI. When metadataFrom is ai.extract, numeric grounding scores are copied here as display.score; routing confidence stays on confidence as categorical low|medium|high.
+                type: object
+                propertyNames:
+                  type: string
+                additionalProperties: {}
+            additionalProperties: false
+        requiredPaths:
+          type: array
+          items:
+            type: string
+        selectionReasons:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties:
+            type: string
+            enum:
+            - always
+            - explicit
+            - low_confidence
+            - missing_confidence
+            - all
+            - reviewer_edit
+            - threshold_met
+            - never
+            - excluded
+            - unmatched
+            - missing_confidence_skip
+        decisions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              path:
+                type: string
+              originalValue:
+                anyOf:
+                - type: string
+                - type: number
+                - type: boolean
+                - type: 'null'
+              currentValue:
+                anyOf:
+                - type: string
+                - type: number
+                - type: boolean
+                - type: 'null'
+              required:
+                type: boolean
+              reason:
+                type: string
+                enum:
+                - always
+                - explicit
+                - low_confidence
+                - missing_confidence
+                - all
+                - reviewer_edit
+                - threshold_met
+                - never
+                - excluded
+                - unmatched
+                - missing_confidence_skip
+              confirmedBy:
+                anyOf:
+                - type: string
+                - type: 'null'
+              confirmedAt:
+                anyOf:
+                - type: string
+                - type: 'null'
+              version:
+                type: integer
+                exclusiveMinimum: 0
+                maximum: 9007199254740991
+            required:
+            - id
+            - path
+            - originalValue
+            - currentValue
+            - required
+            - reason
+            - confirmedBy
+            - confirmedAt
+            - version
+            additionalProperties: false
+        instructions:
+          anyOf:
+          - type: string
+          - type: 'null'
+        completedBy:
+          anyOf:
+          - type: string
+          - type: 'null'
+        completedAt:
+          anyOf:
+          - type: string
+          - type: 'null'
+        outcomeReason:
+          anyOf:
+          - type: string
+          - type: 'null'
+        lineage:
+          description: Optional lineage@1 document resolved from the extract sidecar. Omitted when missing or unreadable. Validate with @openparser/lineage.
+          type: object
+          additionalProperties: true
+        parsedDocument:
+          description: Optional ParsedDocument resolved from the extract sidecar. Omitted when missing or unreadable. Validate with @openparser/schema.
+          type: object
+          additionalProperties: true
+      required:
+      - id
+      - executionId
+      - automationId
+      - automationName
+      - sourceKind
+      - sourceLabel
+      - status
+      - requiredCount
+      - confirmedCount
+      - version
+      - createdAt
+      - updatedAt
+      - files
+      - input
+      - machineData
+      - draftData
+      - schema
+      - fieldMetadata
+      - requiredPaths
+      - selectionReasons
+      - decisions
+      - instructions
+      - completedBy
+      - completedAt
+      - outcomeReason
+      additionalProperties: false
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+        conflictingWorkflowId:
+          description: Present on 409 workflow_name_conflict responses. Id of the workflow that already owns the requested name.
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
+    ApiErrorIssue:
+      type: object
+      properties:
+        field:
+          type: string
+          description: JSON path of the offending field, or "<root>"
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
+      required:
+      - field
+      - message
+      - code
+      - severity
+      additionalProperties: false
+    HumanReviewTaskResponse:
+      type: object
+      properties:
+        task:
+          $ref: '#/components/schemas/HumanReviewTaskDetail'
+      required:
+      - task
+      additionalProperties: false
+    HumanReviewApproveResponse:
+      type: object
+      properties:
+        task:
+          $ref: '#/components/schemas/HumanReviewTaskDetail'
+      required:
+      - task
+      additionalProperties: false
+    HumanReviewRejectResponse:
+      type: object
+      properties:
+        task:
+          $ref: '#/components/schemas/HumanReviewTaskDetail'
+      required:
+      - task
+      additionalProperties: false
+    HumanReviewListResponse:
+      type: object
+      properties:
+        tasks:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              executionId:
+                type: string
+                minLength: 1
+              automationId:
+                type: string
+                minLength: 1
+              automationName:
+                type: string
+                minLength: 1
+              sourceKind:
+                type: string
+                enum:
+                - workflow_step
+                - agent_tool
+              sourceLabel:
+                type: string
+                minLength: 1
+              status:
+                type: string
+                enum:
+                - pending
+                - approved
+                - rejected
+                - cancelled
+              requiredCount:
+                type: integer
+                minimum: 0
+                maximum: 9007199254740991
+              confirmedCount:
+                type: integer
+                minimum: 0
+                maximum: 9007199254740991
+              version:
+                type: integer
+                exclusiveMinimum: 0
+                maximum: 9007199254740991
+              createdAt:
+                type: string
+              updatedAt:
+                type: string
+            required:
+            - id
+            - executionId
+            - automationId
+            - automationName
+            - sourceKind
+            - sourceLabel
+            - status
+            - requiredCount
+            - confirmedCount
+            - version
+            - createdAt
+            - updatedAt
+            additionalProperties: false
+        nextCursor:
+          anyOf:
+          - type: string
+          - type: 'null'
+      required:
+      - tasks
+      - nextCursor
+      additionalProperties: false
+    HumanReviewFieldResponse:
+      type: object
+      properties:
+        task:
+          $ref: '#/components/schemas/HumanReviewTaskDetail'
+      required:
+      - task
+      additionalProperties: false
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'API key issued from Settings → API Keys. Pass as `Authorization: Bearer <key>`.'

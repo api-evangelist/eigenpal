@@ -167,6 +167,62 @@ apis:
     url: https://docs.eigenpal.com/api-reference
   - type: Documentation
     url: https://docs.eigenpal.com/
+- aid: eigenpal:eigenpal-email-servers-api
+  name: Eigenpal Email servers API
+  description: >-
+    Create and manage outbound email servers for workflow mail. Secrets are encrypted at rest and never
+    returned.
+  humanURL: https://docs.eigenpal.com/api-reference
+  baseURL: https://studio.eigenpal.com
+  tags:
+  - Email servers
+  properties:
+  - type: OpenAPI
+    url: openapi/eigenpal-email-servers-api-openapi.yml
+- aid: eigenpal:eigenpal-folders-api
+  name: Eigenpal Folders API
+  description: >-
+    Create and organize workflow and template folders. Deleting a folder unfiles contained workflows or
+    templates and does not delete them.
+  humanURL: https://docs.eigenpal.com/api-reference
+  baseURL: https://studio.eigenpal.com
+  tags:
+  - Folders
+  properties:
+  - type: OpenAPI
+    url: openapi/eigenpal-folders-api-openapi.yml
+- aid: eigenpal:eigenpal-human-reviews-api
+  name: Eigenpal Human reviews API
+  description: The Human reviews API from Eigenpal — 6 operation(s) for human reviews.
+  humanURL: https://docs.eigenpal.com/api-reference
+  baseURL: https://studio.eigenpal.com
+  tags:
+  - Human reviews
+  properties:
+  - type: OpenAPI
+    url: openapi/eigenpal-human-reviews-api-openapi.yml
+- aid: eigenpal:eigenpal-models-api
+  name: Eigenpal Models API
+  description: >-
+    List text, vision, and OCR models configured for the current tenant environment. This is a catalog
+    inventory, not a live provider health probe.
+  humanURL: https://docs.eigenpal.com/api-reference
+  baseURL: https://studio.eigenpal.com
+  tags:
+  - Models
+  properties:
+  - type: OpenAPI
+    url: openapi/eigenpal-models-api-openapi.yml
+- aid: eigenpal:eigenpal-templates-api
+  name: Eigenpal Templates API
+  description: Upload, inspect, version, download, and delete tenant-scoped DOCX and XLSX templates.
+  humanURL: https://docs.eigenpal.com/api-reference
+  baseURL: https://studio.eigenpal.com
+  tags:
+  - Templates
+  properties:
+  - type: OpenAPI
+    url: openapi/eigenpal-templates-api-openapi.yml
 common:
 - url: https://www.eigenpal.com/blog
   type: Blog

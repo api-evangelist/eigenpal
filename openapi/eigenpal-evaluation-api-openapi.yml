@@ -10,19 +10,202 @@ info:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
 servers:
-- url: https://studio.eigenpal.com
-  description: Production
+- url: https://api.eigenpal.com
+  description: Production (canonical API hostname)
 security:
 - bearerAuth: []
 tags:
 - name: Evaluation
   description: Manage datasets, examples, evaluators, experiment batches, evaluator scores, and run promotion workflows.
 paths:
-  /api/v1/automations/{id}/dataset/export:
+  /v1/automations/{id}/dataset-review-requests:
     get:
-      operationId: automations.dataset.export
-      summary: Export automation dataset
-      description: Download the automation dataset as a ZIP archive. The archive uses the examples//input and examples//expected folder convention, so it can be re-imported into another automation or environment.
+      operationId: automations.datasetReviewRequests.list
+      summary: List dataset review requests
+      description: List dataset review requests for one automation, including per-request progress.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias, such as `workflows.slug` or `agents.slug`.
+        required: true
+        description: Automation id or typed alias, such as `workflows.slug` or `agents.slug`.
+      - in: query
+        name: status
+        schema:
+          description: Optional comma-separated review statuses to filter by.
+          type: string
+        description: Optional comma-separated review statuses to filter by.
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      responses:
+        '200':
+          description: Page of dataset review requests.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetReviewRequestList'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    post:
+      operationId: automations.datasetReviewRequests.create
+      summary: Create dataset review request
+      description: Snapshot selected dataset examples into a review request. Include instructions, focusFields to highlight, and ignoredFields for paths reviewers can skip. Optional itemNotes become commented events on those examples.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias, such as `workflows.slug` or `agents.slug`.
+        required: true
+        description: Automation id or typed alias, such as `workflows.slug` or `agents.slug`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDatasetReviewRequest'
+      responses:
+        '201':
+          description: Created dataset review request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetReviewDetail'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/dataset-review-requests/{reviewId}:
+    get:
+      operationId: automations.datasetReviewRequests.get
+      summary: Get dataset review request
+      description: Fetch one dataset review request with snapshotted items, progress, focus fields, ignored fields, and events.
       tags:
       - Evaluation
       parameters:
@@ -33,20 +216,506 @@ paths:
           description: Automation id or typed alias.
         required: true
         description: Automation id or typed alias.
-      - in: query
-        name: exampleIds
+      - in: path
+        name: reviewId
         schema:
-          description: Optional comma-separated dataset example ids to export. Omit to export the full dataset.
           type: string
-        description: Optional comma-separated dataset example ids to export. Omit to export the full dataset.
+          description: Dataset review request id.
+        required: true
+        description: Dataset review request id.
       responses:
         '200':
-          description: Dataset ZIP archive.
+          description: Dataset review request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetReviewDetail'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    patch:
+      operationId: automations.datasetReviewRequests.update
+      summary: Update dataset review request
+      description: Update review metadata or lifecycle status. Set status to `closed` when review is finished; a closed review accepts only a bare reopen back to `open`. Dataset reconciliation stays manual.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: reviewId
+        schema:
+          type: string
+          description: Dataset review request id.
+        required: true
+        description: Dataset review request id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDatasetReviewRequest'
+      responses:
+        '200':
+          description: Updated dataset review request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetReviewDetail'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/dataset-review-requests/{reviewId}/events:
+    get:
+      operationId: automations.datasetReviewRequests.listEvents
+      summary: List dataset review events
+      description: List audit events for one dataset review request.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: reviewId
+        schema:
+          type: string
+          description: Dataset review request id.
+        required: true
+        description: Dataset review request id.
+      responses:
+        '200':
+          description: Review events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetReviewEventList'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/dataset-review-requests/{reviewId}/items:
+    get:
+      operationId: automations.datasetReviewRequests.listItems
+      summary: List dataset review items
+      description: List items for one dataset review request, optionally filtered by item status.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: reviewId
+        schema:
+          type: string
+          description: Dataset review request id.
+        required: true
+        description: Dataset review request id.
+      - in: query
+        name: status
+        schema:
+          description: Optional comma-separated item statuses to filter by.
+          type: string
+        description: Optional comma-separated item statuses to filter by.
+      responses:
+        '200':
+          description: Review items.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetReviewItemList'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/dataset-review-requests/{reviewId}/items/{itemId}:
+    patch:
+      operationId: automations.datasetReviewRequests.updateItem
+      summary: Update dataset review item
+      description: 'Approve, edit, remove, reopen, comment, or record a field-decision or file-decision on one review item while the parent request is draft, open, or paused. Pass `expectedUpdatedAt` from the item the client last observed. Pass `fieldPath` with `action: comment` or `action: field-decision`, `filePath` with `action: file-decision`. `action: edit-file` is multipart-only: send `file` bytes with `filePath` (correct an existing expected file) or `newPath` (upload a brand-new expected file) plus `expectedUpdatedAt`.'
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: reviewId
+        schema:
+          type: string
+          description: Dataset review request id.
+        required: true
+        description: Dataset review request id.
+      - in: path
+        name: itemId
+        schema:
+          type: string
+          description: Dataset review item id.
+        required: true
+        description: Dataset review item id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDatasetReviewItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EditDatasetReviewItemFile'
+      responses:
+        '200':
+          description: Updated review item.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetReviewItemResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/dataset-review-requests/{reviewId}/items/{itemId}/files/{path}:
+    get:
+      operationId: automations.datasetReviewRequests.itemFile.get
+      summary: Download dataset review item file
+      description: Download one input file (default) or expected-output file (`?kind=expected`) belonging to a review item. Authorized by `dataset_review:read` and scoped to files referenced in the item snapshot, so reviewers without workflow read can still preview documents. Expected files resolve to reviewer-corrected bytes when the item has a file overlay.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: path
+        name: reviewId
+        schema:
+          type: string
+          description: Dataset review request id.
+        required: true
+        description: Dataset review request id.
+      - in: path
+        name: itemId
+        schema:
+          type: string
+          description: Dataset review item id.
+        required: true
+        description: Dataset review item id.
+      - in: path
+        name: path
+        schema:
+          type: string
+          description: Slash-delimited path under the example input folder (default) or expected folder (?kind=expected) referenced by the item snapshot.
+        required: true
+        description: Slash-delimited path under the example input folder (default) or expected folder (?kind=expected) referenced by the item snapshot.
+      - in: query
+        name: kind
+        schema:
+          description: Which file tree to serve. `expected` resolves to reviewer-corrected bytes when the item has a file overlay, else the snapshot bytes.
+          type: string
+          enum:
+          - input
+          - expected
+        description: Which file tree to serve. `expected` resolves to reviewer-corrected bytes when the item has a file overlay, else the snapshot bytes.
+      responses:
+        '200':
+          description: File bytes.
           content:
             application/octet-stream:
               schema:
                 type: string
-                description: ZIP archive
+                description: Review item file bytes (input or expected).
                 format: binary
         '400':
           description: Validation error. Request shape did not match the spec.
@@ -95,7 +764,108 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/dataset/import:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/dataset/export:
+    get:
+      operationId: automations.dataset.export
+      summary: Export automation dataset
+      description: Download the automation dataset as a ZIP archive. The archive uses the examples//input and examples//expected folder convention, so it can be re-imported into another automation or environment. Cloud deployments may redirect large archives to a short-lived storage URL.
+      tags:
+      - Evaluation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Automation id or typed alias.
+        required: true
+        description: Automation id or typed alias.
+      - in: query
+        name: exampleIds
+        schema:
+          description: Optional comma-separated dataset example ids to export. Omit to export the full dataset.
+          type: string
+        description: Optional comma-separated dataset example ids to export. Omit to export the full dataset.
+      responses:
+        '200':
+          description: Dataset ZIP archive.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                description: ZIP archive
+                format: binary
+        '302':
+          description: Redirect to a short-lived signed storage download
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/dataset/import:
     post:
       operationId: automations.dataset.import
       summary: Import automation dataset
@@ -170,7 +940,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/evaluators:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/evaluators:
     get:
       operationId: automations.evaluators.get
       summary: Get evaluators
@@ -235,6 +1016,17 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
         '500':
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -313,11 +1105,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/examples:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/examples:
     get:
       operationId: automations.examples.list
       summary: List dataset examples
-      description: List dataset examples for one automation. Examples contain input, expected output, expected files, metadata, and optional overrides used by evaluation runs.
+      description: List dataset examples for one automation. Examples contain input, expected output, expected files, metadata, and optional overrides used by evaluation runs. Pass `include=metadata` to return ids, names, metadata, and expected file refs without loading input or expected JSON.
       tags:
       - Evaluation
       parameters:
@@ -344,6 +1147,15 @@ paths:
           minimum: 0
           maximum: 9007199254740991
         description: Zero-based offset for paging through examples.
+      - in: query
+        name: include
+        schema:
+          description: Response payload scope. `metadata` returns ids, names, metadata, and expected file refs without loading input or expected JSON.
+          type: string
+          enum:
+          - full
+          - metadata
+        description: Response payload scope. `metadata` returns ids, names, metadata, and expected file refs without loading input or expected JSON.
       responses:
         '200':
           description: Page of dataset examples.
@@ -394,6 +1206,17 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
         '500':
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -472,7 +1295,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/examples/{exampleId}:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/examples/{exampleId}:
     get:
       operationId: automations.examples.get
       summary: Get dataset example
@@ -544,6 +1378,17 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
         '500':
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -629,6 +1474,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
     delete:
       operationId: automations.examples.delete
       summary: Delete dataset example
@@ -704,7 +1560,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/examples/{exampleId}/expected:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/examples/{exampleId}/expected:
     get:
       operationId: automations.examples.expected.files.list
       summary: List expected files
@@ -776,6 +1643,17 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
         '500':
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -861,7 +1739,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/examples/{exampleId}/expected/{path}:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/examples/{exampleId}/expected/{path}:
     get:
       operationId: automations.examples.expected.file.get
       summary: Download expected dataset file
@@ -942,6 +1831,17 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
         '500':
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -1034,6 +1934,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
     delete:
       operationId: automations.examples.expected.file.delete
       summary: Delete expected file
@@ -1112,7 +2023,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/examples/{exampleId}/input:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/examples/{exampleId}/input:
     get:
       operationId: automations.examples.input.files.list
       summary: List input files
@@ -1184,6 +2106,17 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
         '500':
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -1269,7 +2202,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/examples/{exampleId}/input/{path}:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/examples/{exampleId}/input/{path}:
     get:
       operationId: automations.examples.input.file.get
       summary: Download input file
@@ -1350,6 +2294,17 @@ paths:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
         '500':
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -1442,6 +2397,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
     delete:
       operationId: automations.examples.input.file.delete
       summary: Delete input file
@@ -1520,7 +2486,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/examples/{exampleId}/run:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/examples/{exampleId}/run:
     post:
       operationId: automations.examples.run
       summary: Run dataset example
@@ -1596,7 +2573,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/experiments:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/experiments:
     get:
       operationId: automations.experiments.list
       summary: List experiments
@@ -1716,6 +2704,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
     post:
       operationId: automations.experiments.create
       summary: Create experiment
@@ -1790,7 +2789,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/experiments/{experimentId}:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/experiments/{experimentId}:
     get:
       operationId: automations.experiments.get
       summary: Get experiment
@@ -1866,7 +2876,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/experiments/{experimentId}/cancel:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/experiments/{experimentId}/cancel:
     post:
       operationId: automations.experiments.cancel
       summary: Cancel experiment
@@ -1942,7 +2963,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/experiments/{experimentId}/export:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/experiments/{experimentId}/export:
     get:
       operationId: automations.experiments.export
       summary: Export experiment eval results
@@ -2032,7 +3064,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/experiments/export:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/experiments/export:
     get:
       operationId: automations.experiments.exportAll
       summary: Export all experiment eval results
@@ -2108,7 +3151,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/experiments/stream:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/experiments/stream:
     post:
       operationId: automations.experiments.createStream
       summary: Create automation experiment with NDJSON progress
@@ -2182,7 +3236,109 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/experiments/{experimentId}:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/dataset-review-requests:
+    get:
+      operationId: datasetReviewRequests.list
+      summary: List dataset review requests across the tenant
+      description: Tenant-wide inbox of dataset review requests with progress and automation display names. Gated by `dataset_review:read` (reviewers allowed; does not require `workflow:read`).
+      tags:
+      - Evaluation
+      parameters:
+      - in: query
+        name: status
+        schema:
+          description: Optional comma-separated review statuses to filter by.
+          type: string
+        description: Optional comma-separated review statuses to filter by.
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+      responses:
+        '200':
+          description: Page of dataset review requests across automations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetReviewInboxList'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/experiments/{experimentId}:
     get:
       operationId: experiments.resolve
       summary: Resolve experiment by id
@@ -2249,7 +3405,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/runs/{id}/scores:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/runs/{id}/scores:
     get:
       operationId: runs.scores.list
       summary: List run evaluator scores
@@ -2318,8 +3485,84 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
+    DatasetReviewEventList:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetReviewEvent'
+      required:
+      - events
+      additionalProperties: false
+    ExperimentRef:
+      type: object
+      properties:
+        id:
+          type: string
+        automationId:
+          type: string
+      required:
+      - id
+      - automationId
+      additionalProperties: false
+    DatasetReviewFocusField:
+      type: object
+      properties:
+        path:
+          type: string
+          minLength: 1
+          description: Dotted expected-output path the reviewer should inspect, e.g. vendor.iban.
+        reason:
+          description: Optional reason this field needs attention.
+          anyOf:
+          - type: string
+            minLength: 1
+          - type: 'null'
+      required:
+      - path
+    DatasetReviewCreateItemNote:
+      type: object
+      properties:
+        exampleName:
+          type: string
+          minLength: 1
+        comment:
+          anyOf:
+          - type: string
+            minLength: 1
+          - type: 'null'
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetReviewItemFieldNote'
+      required:
+      - exampleName
+    DatasetReviewItemFieldNote:
+      type: object
+      properties:
+        path:
+          type: string
+          minLength: 1
+        comment:
+          type: string
+          minLength: 1
+      required:
+      - path
+      - comment
     RunScoresResponse:
       type: object
       properties:
@@ -2332,102 +3575,104 @@ components:
       - scores
       additionalProperties: false
       description: Automated evaluator results attached to a run.
-    DatasetExampleExpectedFileRenameResponse:
-      type: object
-      properties:
-        ok:
-          type: boolean
-          const: true
-        filename:
-          type: string
-        path:
-          type: string
-          description: Updated expected file path.
-      required:
-      - ok
-      - filename
-      - path
-      additionalProperties: false
-    AutomationType:
-      type: string
-      enum:
-      - workflow
-      - agent
-    DatasetExampleMutation:
-      type: object
-      properties:
-        name:
-          description: Example name. Required on create; omitted or null uses a generated name where supported.
-          anyOf:
-          - type: string
-            minLength: 1
-            maxLength: 128
-          - type: 'null'
-        input:
-          description: Input arguments for the example.
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-        expected:
-          description: Expected JSON output. Null clears the expected output.
-          anyOf:
-          - {}
-          - type: 'null'
-        metadata:
-          description: Caller-managed metadata.
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-        annotation:
-          description: Human note about the example. Null clears the annotation.
-          anyOf:
-          - type: string
-            maxLength: 2000
-          - type: 'null'
-        rowOrder:
-          description: Optional display order. Null clears the order.
-          anyOf:
-          - type: integer
-            minimum: 0
-            maximum: 9007199254740991
-          - type: 'null'
-        overrides:
-          description: Step output overrides used during example runs.
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-      description: Fields used to create or update a dataset example.
-    ExperimentRef:
+    DatasetExample:
       type: object
       properties:
         id:
           type: string
+          description: Stable public example id. Workflow examples use DB ids; agent examples use deterministic name-derived ids.
+        name:
+          type: string
+          description: Human-readable dataset example name.
         automationId:
           type: string
-      required:
-      - id
-      - automationId
-      additionalProperties: false
-    DatasetExampleInputFileList:
-      type: object
-      properties:
-        files:
+          description: Automation that owns this example.
+        automationType:
+          $ref: '#/components/schemas/AutomationType'
+        input:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+          description: Input arguments used when this example is run. Null when listing with `include=metadata`.
+        expected:
+          anyOf:
+          - {}
+          - type: 'null'
+          description: Expected JSON output for evaluator comparisons. Null when listing with `include=metadata`.
+        expectedFiles:
           type: array
           items:
-            type: string
-          description: Paths under the example input folder.
+            type: object
+            properties:
+              name:
+                type: string
+                description: Expected file name.
+              url:
+                description: Download URL for the expected file.
+                type: string
+            required:
+            - name
+            additionalProperties: false
+          description: Expected files attached to this example.
+        metadata:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+          description: Caller-managed metadata for sorting or filtering examples.
+        annotation:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Human note about the example.
+        rowOrder:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Optional display order within the dataset.
+        overrides:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+          description: Step output overrides used when running this example.
+        latestRunId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Most recent run id created from this example.
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+        updatedAt:
+          anyOf:
+          - anyOf:
+            - type: string
+            - type: string
+          - type: 'null'
       required:
-      - files
+      - id
+      - name
+      - automationId
+      - automationType
+      - input
+      - expected
+      - expectedFiles
+      - metadata
+      - annotation
+      - rowOrder
+      - overrides
+      - latestRunId
       additionalProperties: false
+      description: One input/expected-output row in an automation dataset.
     DatasetImportResponse:
       anyOf:
       - type: object
@@ -2485,6 +3730,22 @@ components:
         - deleted
         - filesDeleted
         additionalProperties: false
+    DatasetExampleInputFileRenameResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          const: true
+        filename:
+          type: string
+        path:
+          type: string
+          description: Updated input file path.
+      required:
+      - ok
+      - filename
+      - path
+      additionalProperties: false
     DatasetExampleExpectedFileRenameRequest:
       type: object
       properties:
@@ -2493,16 +3754,13 @@ components:
           description: New basename for the file. The parent folder is preserved.
       required:
       - newFilename
-    DatasetExampleExpectedFileList:
+    DatasetReviewItemResponse:
       type: object
       properties:
-        files:
-          type: array
-          items:
-            type: string
-          description: Paths under the example expected folder.
+        item:
+          $ref: '#/components/schemas/DatasetReviewItem'
       required:
-      - files
+      - item
       additionalProperties: false
     EvalResult:
       type: object
@@ -2585,64 +3843,77 @@ components:
       - createdAt
       additionalProperties: false
       description: Automated evaluator result for one run.
-    DatasetExampleList:
+    DatasetReviewRequest:
       type: object
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/DatasetExample'
-        total:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        limit:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        offset:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-      required:
-      - data
-      - total
-      - limit
-      - offset
-      additionalProperties: false
-    EvaluatorConfigResponse:
-      type: object
-      properties:
+        id:
+          type: string
         automationId:
           type: string
-          description: Automation that owns this evaluator config.
-        automationType:
-          $ref: '#/components/schemas/AutomationType'
-        yaml:
+        title:
           type: string
-          description: Evaluator configuration YAML.
-        config:
-          type: object
-          properties:
-            evaluators:
-              type: array
-              items: {}
-              description: Parsed evaluator definitions from the YAML.
-            passThreshold:
-              type: number
-              description: Overall score threshold required for the experiment to pass.
-          required:
-          - evaluators
-          - passThreshold
-          additionalProperties: false
+        instructions:
+          anyOf:
+          - type: string
+          - type: 'null'
+        focusFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetReviewFocusFieldOutput'
+        ignoredFields:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum:
+          - draft
+          - open
+          - paused
+          - closed
+          - cancelled
+        exampleNames:
+          type: array
+          items:
+            type: string
+        progress:
+          $ref: '#/components/schemas/DatasetReviewProgress'
+        createdBy:
+          anyOf:
+          - type: string
+          - type: 'null'
+        createdAt:
+          type: string
+        closedAt:
+          anyOf:
+          - type: string
+          - type: 'null'
       required:
+      - id
       - automationId
-      - automationType
-      - yaml
-      - config
+      - title
+      - instructions
+      - focusFields
+      - ignoredFields
+      - status
+      - exampleNames
+      - progress
+      - createdBy
+      - createdAt
+      - closedAt
       additionalProperties: false
-      description: Evaluator YAML and parsed evaluator configuration for an automation.
-    DatasetExampleInputFileRenameResponse:
+    DatasetExampleExpectedFileList:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+          description: Paths under the example expected folder.
+      required:
+      - files
+      additionalProperties: false
+    DatasetExampleExpectedFileRenameResponse:
       type: object
       properties:
         ok:
@@ -2652,121 +3923,48 @@ components:
           type: string
         path:
           type: string
-          description: Updated input file path.
+          description: Updated expected file path.
       required:
       - ok
       - filename
       - path
       additionalProperties: false
-    DatasetExample:
+    DatasetExampleInputFileRenameRequest:
       type: object
       properties:
-        id:
+        newFilename:
           type: string
-          description: Stable public example id. Workflow examples use DB ids; agent examples use deterministic name-derived ids.
-        name:
+          description: New basename for the file. The parent folder is preserved.
+      required:
+      - newFilename
+    UpdateDatasetReviewRequest:
+      type: object
+      properties:
+        title:
           type: string
-          description: Human-readable dataset example name.
-        automationId:
-          type: string
-          description: Automation that owns this example.
-        automationType:
-          $ref: '#/components/schemas/AutomationType'
-        input:
+          minLength: 1
+        instructions:
           anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
+          - type: string
           - type: 'null'
-          description: Input arguments used when this example is run.
-        expected:
-          anyOf:
-          - {}
-          - type: 'null'
-          description: Expected JSON output for evaluator comparisons.
-        expectedFiles:
+        focusFields:
           type: array
           items:
-            type: object
-            properties:
-              name:
-                type: string
-                description: Expected file name.
-              url:
-                description: Download URL for the expected file.
-                type: string
-            required:
-            - name
-            additionalProperties: false
-          description: Expected files attached to this example.
-        metadata:
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-          description: Caller-managed metadata for sorting or filtering examples.
-        annotation:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Human note about the example.
-        rowOrder:
-          anyOf:
-          - type: number
-          - type: 'null'
-          description: Optional display order within the dataset.
-        overrides:
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-          description: Step output overrides used when running this example.
-        latestRunId:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Most recent run id created from this example.
-        createdAt:
-          anyOf:
-          - type: string
-          - type: string
-        updatedAt:
-          anyOf:
-          - anyOf:
-            - type: string
-            - type: string
-          - type: 'null'
-      required:
-      - id
-      - name
-      - automationId
-      - automationType
-      - input
-      - expected
-      - expectedFiles
-      - metadata
-      - annotation
-      - rowOrder
-      - overrides
-      - latestRunId
-      additionalProperties: false
-      description: One input/expected-output row in an automation dataset.
-    DatasetExampleInputFileUploadRequest:
-      type: object
-      properties:
-        file:
+            $ref: '#/components/schemas/DatasetReviewFocusField'
+        ignoredFields:
           type: array
           items:
             type: string
-            format: binary
-          description: One or more input files to upload.
-      required:
-      - file
+            minLength: 1
+        status:
+          type: string
+          enum:
+          - draft
+          - open
+          - paused
+          - closed
+          - cancelled
+      additionalProperties: false
     DatasetExampleUpdate:
       type: object
       properties:
@@ -2821,151 +4019,76 @@ components:
           - type: 'null'
       additionalProperties: false
       description: Partial update for a dataset example. Omitted fields are preserved.
-    Experiment:
+    DatasetExampleList:
       type: object
       properties:
-        id:
-          type: string
-          description: Experiment batch id. Some CLI commands historically call this a batch id.
-        automationId:
-          type: string
-          description: Automation this experiment belongs to.
-        automationType:
-          $ref: '#/components/schemas/AutomationType'
-        status:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetExample'
+        total:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        limit:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        offset:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+      - data
+      - total
+      - limit
+      - offset
+      additionalProperties: false
+    UpdateDatasetReviewItem:
+      type: object
+      properties:
+        action:
           type: string
           enum:
-          - queued
-          - running
-          - completed
-          description: Experiment batch status.
-        runCount:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Total runs in the experiment.
-        completedCount:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Runs that have completed.
-        passedCount:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Runs whose evaluator scores passed.
-        failedCount:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-          description: Runs whose evaluator scores failed.
-        avgScore:
-          anyOf:
-          - type: number
-          - type: 'null'
-          description: Average automated evaluator score.
-        createdAt:
-          anyOf:
-          - type: string
-          - type: string
-        completedAt:
-          anyOf:
-          - anyOf:
-            - type: string
-            - type: string
-          - type: 'null'
-        version:
+          - approve
+          - edit
+          - remove
+          - reopen
+          - comment
+          - field-decision
+          - file-decision
+          - edit-file
+          description: file-decision records a per-expected-file approve/remove (or a note). edit-file uploads corrected bytes and is multipart-only — JSON callers get a 400 pointing at the multipart form.
+        expected: {}
+        comment:
           anyOf:
           - type: string
           - type: 'null'
-      required:
-      - id
-      - automationId
-      - automationType
-      - status
-      - runCount
-      - completedCount
-      - passedCount
-      - failedCount
-      - avgScore
-      - createdAt
-      - completedAt
-      - version
-      additionalProperties: false
-      description: Experiment batch summary for an automation dataset run.
-    ApiErrorEnvelope:
-      type: object
-      properties:
-        issues:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApiErrorIssue'
-        requestId:
-          type: string
-          description: Request id echoed via the x-request-id header
-        hint:
-          description: Suggested fix for known error patterns
-          type: string
-        docsUrl:
-          description: Link to relevant docs
-          type: string
-      required:
-      - issues
-      - requestId
-      additionalProperties: false
-    AutomationDatasetImportMultipartRequest:
-      type: object
-      properties:
-        file:
-          type: string
-          description: Dataset ZIP file
-          format: binary
-        mode:
-          description: '`append` adds examples without deleting existing rows. `replace` deletes the current dataset before importing.'
-          type: string
-          enum:
-          - append
-          - replace
-      required:
-      - file
-    DatasetExampleInputFileRenameRequest:
-      type: object
-      properties:
-        newFilename:
-          type: string
-          description: New basename for the file. The parent folder is preserved.
-      required:
-      - newFilename
-    DatasetExampleExpectedFileUploadRequest:
-      type: object
-      properties:
-        file:
-          type: array
-          items:
-            type: string
-            format: binary
-          description: One or more expected files to upload.
-      required:
-      - file
-    ExperimentCreate:
-      type: object
-      properties:
-        examples:
-          description: Optional dataset example ids to run. Omit to run the full dataset.
-          type: array
-          items:
-            type: string
-        batchConcurrency:
-          description: Maximum concurrent example runs for this experiment.
+        fieldPath:
           anyOf:
-          - type: integer
-            exclusiveMinimum: 0
-            maximum: 9007199254740991
+          - type: string
+            minLength: 1
           - type: 'null'
-        sourceRef:
-          description: Optional source version/ref to use for experiment runs.
+        filePath:
+          description: Expected-file path for action file-decision.
+          anyOf:
+          - type: string
+            minLength: 1
+          - type: 'null'
+        decision:
+          anyOf:
+          - type: string
+            enum:
+            - approved
+            - removed
+          - type: 'null'
+        expectedUpdatedAt:
           type: string
-      description: Request body for starting an experiment batch.
+          minLength: 1
+          description: ISO timestamp of the item `updatedAt` the client last observed. Required for optimistic concurrency.
+      required:
+      - action
+      - expectedUpdatedAt
     ExperimentDetail:
       type: object
       properties:
@@ -3044,6 +4167,16 @@ components:
                 - type: string
                 - type: 'null'
                 description: Dataset example name for the run.
+              evalScore:
+                anyOf:
+                - type: number
+                - type: 'null'
+                description: Persisted weighted evaluator score.
+              evalPassed:
+                anyOf:
+                - type: boolean
+                - type: 'null'
+                description: Persisted aggregate evaluator verdict.
               createdAt:
                 anyOf:
                 - type: string
@@ -3059,6 +4192,8 @@ components:
             - status
             - exampleId
             - exampleName
+            - evalScore
+            - evalPassed
             - createdAt
             - completedAt
             additionalProperties: false
@@ -3089,28 +4224,288 @@ components:
       - resultsByRun
       additionalProperties: false
       description: Experiment batch detail.
-    DatasetExampleInputFileUploadResponse:
+    DatasetExampleInputFileList:
       type: object
       properties:
-        uploaded:
+        files:
           type: array
           items:
             type: string
-          description: Stored input file paths.
+          description: Paths under the example input folder.
       required:
-      - uploaded
+      - files
       additionalProperties: false
-    DatasetExampleExpectedFileUploadResponse:
+    AutomationDatasetImportMultipartRequest:
       type: object
       properties:
-        uploaded:
+        file:
+          type: string
+          description: Dataset ZIP file
+          format: binary
+        mode:
+          description: '`append` adds examples without deleting existing rows. `replace` deletes the current dataset before importing.'
+          type: string
+          enum:
+          - append
+          - replace
+      required:
+      - file
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+        conflictingWorkflowId:
+          description: Present on 409 workflow_name_conflict responses. Id of the workflow that already owns the requested name.
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
+    DatasetReviewFileDecision:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum:
+          - approved
+          - removed
+        comment:
+          anyOf:
+          - type: string
+          - type: 'null'
+        reviewerId:
+          type: string
+        updatedAt:
+          type: string
+      required:
+      - decision
+      - reviewerId
+      - updatedAt
+      additionalProperties: false
+    AutomationType:
+      type: string
+      enum:
+      - workflow
+      - agent
+    CreateDatasetReviewRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        instructions:
+          description: Note shown to the reviewer for the whole request.
+          anyOf:
+          - type: string
+          - type: 'null'
+        focusFields:
+          description: Expected-output paths to highlight. Other fields stay normal unless listed in ignoredFields.
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetReviewFocusField'
+        ignoredFields:
+          description: Expected-output paths reviewers can skip. Shown muted as not required. Prefixes apply to nested leaves.
           type: array
           items:
             type: string
-          description: Stored expected file paths.
+            minLength: 1
+        itemNotes:
+          description: Optional per-example and per-field notes seeded as commented events at create time.
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetReviewCreateItemNote'
+        exampleNames:
+          minItems: 1
+          type: array
+          items:
+            type: string
+            minLength: 1
+        status:
+          type: string
+          enum:
+          - draft
+          - open
+          - paused
       required:
-      - uploaded
+      - title
+      - exampleNames
+    EvaluatorConfigUpdate:
+      type: object
+      properties:
+        yaml:
+          type: string
+          minLength: 1
+          maxLength: 1048576
+          description: Complete evaluator YAML to validate and store.
+      required:
+      - yaml
+      description: Replacement evaluator configuration.
+    DatasetReviewRequestList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetReviewRequest'
+        total:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        limit:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        offset:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+      - data
+      - total
+      - limit
+      - offset
       additionalProperties: false
+    EvaluatorConfigResponse:
+      type: object
+      properties:
+        automationId:
+          type: string
+          description: Automation that owns this evaluator config.
+        automationType:
+          $ref: '#/components/schemas/AutomationType'
+        yaml:
+          type: string
+          description: Evaluator configuration YAML.
+        config:
+          type: object
+          properties:
+            evaluators:
+              type: array
+              items: {}
+              description: Parsed evaluator definitions from the YAML.
+            passThreshold:
+              type: number
+              description: Overall score threshold required for the experiment to pass.
+          required:
+          - evaluators
+          - passThreshold
+          additionalProperties: false
+      required:
+      - automationId
+      - automationType
+      - yaml
+      - config
+      additionalProperties: false
+      description: Evaluator YAML and parsed evaluator configuration for an automation.
+    DatasetReviewInboxList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetReviewInboxItem'
+        total:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        limit:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        offset:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+      - data
+      - total
+      - limit
+      - offset
+      additionalProperties: false
+    Experiment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Experiment batch id. Some CLI commands historically call this a batch id.
+        automationId:
+          type: string
+          description: Automation this experiment belongs to.
+        automationType:
+          $ref: '#/components/schemas/AutomationType'
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          description: Experiment batch status.
+        runCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Total runs in the experiment.
+        completedCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs that have completed.
+        passedCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs whose evaluator scores passed.
+        failedCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: Runs whose evaluator scores failed.
+        avgScore:
+          anyOf:
+          - type: number
+          - type: 'null'
+          description: Average automated evaluator score.
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+        completedAt:
+          anyOf:
+          - anyOf:
+            - type: string
+            - type: string
+          - type: 'null'
+        version:
+          anyOf:
+          - type: string
+          - type: 'null'
+      required:
+      - id
+      - automationId
+      - automationType
+      - status
+      - runCount
+      - completedCount
+      - passedCount
+      - failedCount
+      - avgScore
+      - createdAt
+      - completedAt
+      - version
+      additionalProperties: false
+      description: Experiment batch summary for an automation dataset run.
     ExampleRunResponse:
       type: object
       properties:
@@ -3138,17 +4533,546 @@ components:
       - batchId
       - finished
       additionalProperties: false
-    EvaluatorConfigUpdate:
+    DatasetExampleExpectedFileUploadRequest:
       type: object
       properties:
-        yaml:
+        file:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: One or more expected files to upload.
+      required:
+      - file
+    DatasetExampleInputFileUploadResponse:
+      type: object
+      properties:
+        uploaded:
+          type: array
+          items:
+            type: string
+          description: Stored input file paths.
+      required:
+      - uploaded
+      additionalProperties: false
+    DatasetExampleMutation:
+      type: object
+      properties:
+        name:
+          description: Example name. Required on create; omitted or null uses a generated name where supported.
+          anyOf:
+          - type: string
+            minLength: 1
+            maxLength: 128
+          - type: 'null'
+        input:
+          description: Input arguments for the example.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        expected:
+          description: Expected JSON output. Null clears the expected output.
+          anyOf:
+          - {}
+          - type: 'null'
+        metadata:
+          description: Caller-managed metadata.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        annotation:
+          description: Human note about the example. Null clears the annotation.
+          anyOf:
+          - type: string
+            maxLength: 2000
+          - type: 'null'
+        rowOrder:
+          description: Optional display order. Null clears the order.
+          anyOf:
+          - type: integer
+            minimum: 0
+            maximum: 9007199254740991
+          - type: 'null'
+        overrides:
+          description: Step output overrides used during example runs.
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+      description: Fields used to create or update a dataset example.
+    DatasetReviewProgress:
+      type: object
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        pending:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        approved:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        edited:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        removed:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+        remaining:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+          description: Count of examples still pending a decision.
+        complete:
+          type: boolean
+          description: True when every example has been approved, edited, or removed. Close the request when review is finished; dataset write-back is always manual.
+      required:
+      - total
+      - pending
+      - approved
+      - edited
+      - removed
+      - remaining
+      - complete
+      additionalProperties: false
+    DatasetReviewItem:
+      type: object
+      properties:
+        id:
+          type: string
+        reviewId:
+          type: string
+        exampleName:
+          type: string
+        snapshotInputJson:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        snapshotExpectedJson:
+          anyOf:
+          - {}
+          - type: 'null'
+        snapshotManifest:
+          type: object
+          properties:
+            expectedFiles:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                required:
+                - name
+                additionalProperties: false
+            metadata:
+              anyOf:
+              - type: object
+                propertyNames:
+                  type: string
+                additionalProperties: {}
+              - type: 'null'
+            inputFileHashes:
+              type: array
+              items:
+                type: object
+                properties:
+                  path:
+                    type: string
+                  sha256:
+                    type: string
+                required:
+                - path
+                - sha256
+                additionalProperties: false
+          required:
+          - expectedFiles
+          - metadata
+          additionalProperties: false
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - edited
+          - removed
+        currentExpectedJson:
+          anyOf:
+          - {}
+          - type: 'null'
+        fieldDecisions:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties:
+            $ref: '#/components/schemas/DatasetReviewFieldDecision'
+        currentExpectedFiles:
+          anyOf:
+          - type: array
+            items:
+              $ref: '#/components/schemas/DatasetReviewExpectedFile'
+          - type: 'null'
+          description: Overlay of the snapshot manifest expected files. Null means pristine — the reviewer has not corrected or uploaded any file yet.
+        fileDecisions:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties:
+            $ref: '#/components/schemas/DatasetReviewFileDecision'
+          description: Durable per-expected-file approve/remove, keyed by expected-file path.
+        inputDrifted:
+          type: boolean
+          description: True when live dataset input-file bytes no longer match the hashes captured at request creation.
+        updatedBy:
+          anyOf:
+          - type: string
+          - type: 'null'
+        updatedAt:
+          type: string
+      required:
+      - id
+      - reviewId
+      - exampleName
+      - snapshotInputJson
+      - snapshotExpectedJson
+      - snapshotManifest
+      - status
+      - currentExpectedJson
+      - fieldDecisions
+      - currentExpectedFiles
+      - fileDecisions
+      - inputDrifted
+      - updatedBy
+      - updatedAt
+      additionalProperties: false
+    DatasetReviewInboxItem:
+      type: object
+      properties:
+        id:
+          type: string
+        automationId:
+          type: string
+        title:
+          type: string
+        instructions:
+          anyOf:
+          - type: string
+          - type: 'null'
+        focusFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetReviewFocusFieldOutput'
+        ignoredFields:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum:
+          - draft
+          - open
+          - paused
+          - closed
+          - cancelled
+        exampleNames:
+          type: array
+          items:
+            type: string
+        progress:
+          $ref: '#/components/schemas/DatasetReviewProgress'
+        createdBy:
+          anyOf:
+          - type: string
+          - type: 'null'
+        createdAt:
+          type: string
+        closedAt:
+          anyOf:
+          - type: string
+          - type: 'null'
+        automationName:
+          type: string
+          description: Display name for the automation that owns this review request.
+      required:
+      - id
+      - automationId
+      - title
+      - instructions
+      - focusFields
+      - ignoredFields
+      - status
+      - exampleNames
+      - progress
+      - createdBy
+      - createdAt
+      - closedAt
+      - automationName
+      additionalProperties: false
+    DatasetReviewFieldDecision:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum:
+          - approved
+          - removed
+        comment:
+          anyOf:
+          - type: string
+          - type: 'null'
+        reviewerId:
+          type: string
+        updatedAt:
+          type: string
+      required:
+      - decision
+      - reviewerId
+      - updatedAt
+      additionalProperties: false
+    ApiErrorIssue:
+      type: object
+      properties:
+        field:
+          type: string
+          description: JSON path of the offending field, or "<root>"
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
+      required:
+      - field
+      - message
+      - code
+      - severity
+      additionalProperties: false
+    ExperimentCreate:
+      type: object
+      properties:
+        examples:
+          description: Optional dataset example ids to run. Omit to run the full dataset.
+          type: array
+          items:
+            type: string
+        batchConcurrency:
+          description: Maximum concurrent example runs for this experiment.
+          anyOf:
+          - type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+          - type: 'null'
+        sourceRef:
+          description: Optional source version/ref to use for experiment runs.
+          type: string
+      description: Request body for starting an experiment batch.
+    DatasetReviewEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        reviewId:
+          type: string
+        itemId:
+          anyOf:
+          - type: string
+          - type: 'null'
+        actorUserId:
+          anyOf:
+          - type: string
+          - type: 'null'
+        action:
+          type: string
+          enum:
+          - created
+          - approved
+          - edited
+          - removed
+          - reopened
+          - commented
+          - field-decision
+          - file-decision
+          - file-edited
+        diffSummary:
+          anyOf:
+          - {}
+          - type: 'null'
+        createdAt:
+          type: string
+      required:
+      - id
+      - reviewId
+      - itemId
+      - actorUserId
+      - action
+      - diffSummary
+      - createdAt
+      additionalProperties: false
+    EditDatasetReviewItemFile:
+      type: object
+      properties:
+        action:
+          description: Must be edit-file for the multipart item PATCH form.
+          type: string
+          const: edit-file
+        file:
+          description: Corrected expected-file bytes (50MB cap).
+          format: binary
+          type: string
+        filePath:
           type: string
           minLength: 1
-          maxLength: 1048576
-          description: Complete evaluator YAML to validate and store.
+        newPath:
+          type: string
+          minLength: 1
+        comment:
+          anyOf:
+          - type: string
+            minLength: 1
+          - type: 'null'
+        expectedUpdatedAt:
+          type: string
+          minLength: 1
       required:
-      - yaml
-      description: Replacement evaluator configuration.
+      - expectedUpdatedAt
+    DatasetReviewItemList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetReviewItem'
+      required:
+      - items
+      additionalProperties: false
+    DatasetReviewFocusFieldOutput:
+      type: object
+      properties:
+        path:
+          type: string
+          minLength: 1
+          description: Dotted expected-output path the reviewer should inspect, e.g. vendor.iban.
+        reason:
+          description: Optional reason this field needs attention.
+          anyOf:
+          - type: string
+            minLength: 1
+          - type: 'null'
+      required:
+      - path
+      additionalProperties: false
+    DatasetExampleInputFileUploadRequest:
+      type: object
+      properties:
+        file:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: One or more input files to upload.
+      required:
+      - file
+    DatasetExampleExpectedFileUploadResponse:
+      type: object
+      properties:
+        uploaded:
+          type: array
+          items:
+            type: string
+          description: Stored expected file paths.
+      required:
+      - uploaded
+      additionalProperties: false
+    DatasetReviewDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        automationId:
+          type: string
+        title:
+          type: string
+        instructions:
+          anyOf:
+          - type: string
+          - type: 'null'
+        focusFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetReviewFocusFieldOutput'
+        ignoredFields:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum:
+          - draft
+          - open
+          - paused
+          - closed
+          - cancelled
+        exampleNames:
+          type: array
+          items:
+            type: string
+        progress:
+          $ref: '#/components/schemas/DatasetReviewProgress'
+        createdBy:
+          anyOf:
+          - type: string
+          - type: 'null'
+        createdAt:
+          type: string
+        closedAt:
+          anyOf:
+          - type: string
+          - type: 'null'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetReviewItem'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetReviewEvent'
+      required:
+      - id
+      - automationId
+      - title
+      - instructions
+      - focusFields
+      - ignoredFields
+      - status
+      - exampleNames
+      - progress
+      - createdBy
+      - createdAt
+      - closedAt
+      - items
+      additionalProperties: false
     ExperimentCreateResponse:
       type: object
       properties:
@@ -3184,29 +5108,29 @@ components:
       - total
       additionalProperties: false
       description: Accepted experiment batch and the runs it enqueued.
-    ApiErrorIssue:
+    DatasetReviewExpectedFile:
       type: object
       properties:
-        field:
+        path:
           type: string
-          description: JSON path of the offending field, or "<root>"
-        message:
+          description: Expected-file path relative to the example expected/ folder.
+        fileId:
           type: string
-          description: Human-readable error message
-        code:
+          description: Version id for the current bytes. Empty for snapshot-origin files, which resolve by path.
+        filename:
           type: string
-          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
-        severity:
+        origin:
           type: string
           enum:
-          - error
-          - warning
-          description: Issue severity
+          - snapshot
+          - corrected
+          - uploaded
+          description: Whether the current bytes are the snapshotted dataset file, a reviewer-corrected version, or a brand-new reviewer upload.
       required:
-      - field
-      - message
-      - code
-      - severity
+      - path
+      - fileId
+      - filename
+      - origin
       additionalProperties: false
   securitySchemes:
     bearerAuth:

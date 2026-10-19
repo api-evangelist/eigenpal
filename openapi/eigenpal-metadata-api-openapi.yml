@@ -10,15 +10,15 @@ info:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
 servers:
-- url: https://studio.eigenpal.com
-  description: Production
+- url: https://api.eigenpal.com
+  description: Production (canonical API hostname)
 security:
 - bearerAuth: []
 tags:
 - name: Metadata
   description: Authenticate and inspect the current API context.
 paths:
-  /api/v1/auth/check:
+  /v1/auth/check:
     get:
       operationId: auth.check
       summary: Check API key identity
@@ -79,8 +79,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+        conflictingWorkflowId:
+          description: Present on 409 workflow_name_conflict responses. Id of the workflow that already owns the requested name.
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
     AuthCheckResponse:
       type: object
       properties:
@@ -126,26 +160,6 @@ components:
       - name
       - scope
       - wildcardGranted
-      additionalProperties: false
-    ApiErrorEnvelope:
-      type: object
-      properties:
-        issues:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApiErrorIssue'
-        requestId:
-          type: string
-          description: Request id echoed via the x-request-id header
-        hint:
-          description: Suggested fix for known error patterns
-          type: string
-        docsUrl:
-          description: Link to relevant docs
-          type: string
-      required:
-      - issues
-      - requestId
       additionalProperties: false
     ApiErrorIssue:
       type: object

@@ -10,19 +10,19 @@ info:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
 servers:
-- url: https://studio.eigenpal.com
-  description: Production
+- url: https://api.eigenpal.com
+  description: Production (canonical API hostname)
 security:
 - bearerAuth: []
 tags:
 - name: Automations
-  description: Inspect runnable workflow and agent automations, their versions, triggers, and source sync state.
+  description: Inspect runnable workflow and agent automations, their versions, triggers, and source sync state. Move YAML workflows between folders and delete automations.
 paths:
-  /api/v1/automations:
+  /v1/automations:
     get:
       operationId: automations.list
       summary: List automations
-      description: Returns workflows and agents through one runnable automation collection. Use `type` to narrow to workflows or agents, and `search` to find automations by slug, name, or description.
+      description: Returns workflows and agents through one runnable automation collection. Use `type` to narrow to workflows or agents, `search` to find automations by slug, name, or description, and `folderId` to list YAML workflows in a folder (`null` for root).
       tags:
       - Automations
       parameters:
@@ -41,6 +41,12 @@ paths:
           - workflow
           - agent
         description: Filter by implementation type
+      - in: query
+        name: folderId
+        schema:
+          description: Filter YAML workflows by folder. A folder id matches that folder; `null` matches unfiled workflows at root. Agent automations have no folders, so this filter excludes them. Cannot be combined with `type=agent`.
+          type: string
+        description: Filter YAML workflows by folder. A folder id matches that folder; `null` matches unfiled workflows at root. Agent automations have no folders, so this filter excludes them. Cannot be combined with `type=agent`.
       - in: query
         name: limit
         schema:
@@ -111,7 +117,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}:
     get:
       operationId: automations.get
       summary: Get automation
@@ -180,7 +197,182 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/sync:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    patch:
+      operationId: automations.update
+      summary: Move workflow automation
+      description: Move a YAML workflow between organizing folders. `folderPath` auto-creates missing workflow folders; empty or `/` files the workflow at root. Agent automations have no database folder model and are rejected. Identifiers match GET (workflow id, automation id, or `workflows.`).
+      tags:
+      - Automations
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Workflow id, agent id, or typed alias like workflows.slug / agents.slug
+        required: true
+        description: Workflow id, agent id, or typed alias like workflows.slug / agents.slug
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAutomationRequest'
+      responses:
+        '200':
+          description: Updated automation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutomationDetail'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    delete:
+      operationId: automations.delete
+      summary: Delete automation
+      description: Delete a workflow or agent automation using the same cleanup as the dashboard. Workflows archive the automations registry parent and keep execution history. Agents delete the agent row, archive the registry parent, and best-effort-delete agent storage. Identifiers match GET.
+      tags:
+      - Automations
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Workflow id, agent id, or typed alias like workflows.slug / agents.slug
+        required: true
+        description: Workflow id, agent id, or typed alias like workflows.slug / agents.slug
+      responses:
+        '200':
+          description: Automation deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteAutomationResponse'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/sync:
     post:
       operationId: automations.sync
       summary: Sync automation from latest Git release
@@ -308,7 +500,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/triggers:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/triggers:
     get:
       operationId: automations.triggers.get
       summary: Get automation triggers
@@ -377,11 +580,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
-  /api/v1/automations/{id}/versions:
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/versions:
     get:
       operationId: automations.versions.list
       summary: List automation versions
-      description: List versions for a workflow or agent automation through one read-only route.
+      description: List versions for a workflow or agent automation. YAML workflow lists include tagged releases plus the current untagged snapshot when HEAD is untagged (for example after restore), so the current version is always present. Agent lists remain Git release tags.
       tags:
       - Automations
       parameters:
@@ -446,8 +660,349 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+    post:
+      operationId: automations.versions.create
+      summary: Create a workflow version
+      description: 'Create a tagged YAML workflow candidate from validated YAML or by copying an existing snapshot (`historyId`). Provide exactly one of `yaml` or `historyId`. Copy creates a new tagged row and leaves the source tag unchanged; it does not retag the original. Defaults to making the new version current. Set `activate: false` to keep it off live traffic until promote — that path requires an existing current workflow version and returns 400 if HEAD is empty. Agent automations are Git-backed and return 400. Requires a Bearer API key or a dashboard session.'
+      tags:
+      - Automations
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Workflow id, agent id, or typed alias like workflows.slug / agents.slug
+        required: true
+        description: Workflow id, agent id, or typed alias like workflows.slug / agents.slug
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAutomationVersionRequest'
+      responses:
+        '201':
+          description: Created workflow version.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutomationVersion'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '409':
+          description: Conflict. The resource is in a state that forbids the request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/versions/{versionId}/promote:
+    post:
+      operationId: automations.versions.promote
+      summary: Promote a workflow version
+      description: Make an existing tagged YAML workflow candidate current without creating another history row. Only tagged version rows can be promoted; untagged snapshots (including restore HEAD) and missing ids return 404. Agent automations return 400. Requires a Bearer API key or a dashboard session.
+      tags:
+      - Automations
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Workflow id, agent id, or typed alias like workflows.slug / agents.slug
+        required: true
+        description: Workflow id, agent id, or typed alias like workflows.slug / agents.slug
+      - in: path
+        name: versionId
+        schema:
+          type: string
+          description: Tagged version id from GET /automations/{id}/versions. Untagged snapshots (for example after restore) and unknown ids return 404.
+        required: true
+        description: Tagged version id from GET /automations/{id}/versions. Untagged snapshots (for example after restore) and unknown ids return 404.
+      responses:
+        '200':
+          description: Existing tagged workflow version promoted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutomationVersion'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '409':
+          description: Conflict. The resource is in a state that forbids the request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+  /v1/automations/{id}/versions/{versionId}/restore:
+    post:
+      operationId: automations.versions.restore
+      summary: Restore a workflow version
+      description: Restore a YAML workflow automation by copying a previous snapshot into a new untagged current version. The source tag is left unchanged; the new HEAD appears in subsequent version lists as the untagged current row and cannot be promoted until you create a tagged copy. The JSON body may be `{}`; `message` is optional and defaults to a timestamped restore note. Agent automations return 400. Requires a Bearer API key or a dashboard session.
+      tags:
+      - Automations
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          description: Workflow id, agent id, or typed alias like workflows.slug / agents.slug
+        required: true
+        description: Workflow id, agent id, or typed alias like workflows.slug / agents.slug
+      - in: path
+        name: versionId
+        schema:
+          type: string
+          description: Version id from GET /automations/{id}/versions (a workflow history id).
+        required: true
+        description: Version id from GET /automations/{id}/versions (a workflow history id).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestoreAutomationVersionRequest'
+      responses:
+        '201':
+          description: New current version created from the restored snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutomationVersion'
+        '400':
+          description: Validation error. Request shape did not match the spec.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: API key lacks required scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '409':
+          description: Conflict. The resource is in a state that forbids the request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '413':
+          description: Payload too large. Upload exceeded the per-request size cap.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '503':
+          description: Rate-limit accounting is temporarily unavailable. The request was not processed; retry.
+          headers:
+            Retry-After:
+              description: Seconds until the next request may succeed
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
 components:
   schemas:
+    ApiErrorEnvelope:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiErrorIssue'
+        requestId:
+          type: string
+          description: Request id echoed via the x-request-id header
+        hint:
+          description: Suggested fix for known error patterns
+          type: string
+        docsUrl:
+          description: Link to relevant docs
+          type: string
+        conflictingWorkflowId:
+          description: Present on 409 workflow_name_conflict responses. Id of the workflow that already owns the requested name.
+          type: string
+      required:
+      - issues
+      - requestId
+      additionalProperties: false
+    ApiErrorIssue:
+      type: object
+      properties:
+        field:
+          type: string
+          description: JSON path of the offending field, or "<root>"
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
+        severity:
+          type: string
+          enum:
+          - error
+          - warning
+          description: Issue severity
+      required:
+      - field
+      - message
+      - code
+      - severity
+      additionalProperties: false
     AutomationVersion:
       type: object
       properties:
@@ -474,108 +1029,49 @@ components:
       - automationId
       - version
       additionalProperties: false
-    ListAutomationsResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/AutomationSummary'
-        total:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        limit:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-        offset:
-          type: integer
-          minimum: -9007199254740991
-          maximum: 9007199254740991
-      required:
-      - data
-      - total
-      - limit
-      - offset
-      additionalProperties: false
-    AutomationTriggersResponse:
-      type: object
-      properties:
-        automationId:
-          type: string
-        type:
-          $ref: '#/components/schemas/AutomationType'
-        triggers:
-          $ref: '#/components/schemas/AutomationTriggerState'
-      required:
-      - automationId
-      - type
-      - triggers
-      additionalProperties: false
     AutomationType:
       type: string
       enum:
       - workflow
       - agent
-    AutomationDetail:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Implementation id for the automation. Workflow automations use workflow ids; agent automations use agent workflow ids.
-        type:
-          $ref: '#/components/schemas/AutomationType'
-        slug:
-          type: string
-        name:
-          anyOf:
-          - type: string
-          - type: 'null'
-        description:
-          anyOf:
-          - type: string
-          - type: 'null'
-        status:
-          type: string
-        version:
-          anyOf:
-          - type: string
-          - type: 'null'
-        triggers:
-          $ref: '#/components/schemas/AutomationTriggerState'
-        implementationAvailable:
-          description: False when the automations registry row exists but the workflow/agent implementation row is missing.
-          type: boolean
-        createdAt:
-          anyOf:
-          - type: string
-          - type: string
-        updatedAt:
-          anyOf:
-          - type: string
-          - type: string
-        inputSchema:
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-        outputSchema:
-          anyOf:
-          - type: object
-            propertyNames:
-              type: string
-            additionalProperties: {}
-          - type: 'null'
-      required:
-      - id
-      - type
-      - slug
-      - name
-      - createdAt
-      additionalProperties: false
+    CreateAutomationVersionRequest:
+      anyOf:
+      - type: object
+        properties:
+          yaml:
+            type: string
+            minLength: 1
+            maxLength: 1048576
+            description: Validated workflow YAML to publish as a new tagged version. Mutually exclusive with `historyId`. At most 1 MiB.
+          version:
+            type: string
+            pattern: ^\d+\.\d+\.\d+$
+            description: Bare semver tag such as 1.2.0. Do not include a leading v.
+          activate:
+            description: 'Whether to make the new version current immediately. Defaults to true. Set false to keep a tagged candidate off live traffic until promote. `activate: false` requires an existing current workflow version and returns 400 if HEAD is empty.'
+            type: boolean
+        required:
+        - yaml
+        - version
+        additionalProperties: false
+      - type: object
+        properties:
+          historyId:
+            type: string
+            minLength: 1
+            description: Existing version id from GET /automations/{id}/versions. Creates a new tagged snapshot copied from that version; the source tag is left unchanged. Mutually exclusive with `yaml`.
+          version:
+            type: string
+            pattern: ^\d+\.\d+\.\d+$
+            description: Bare semver tag such as 1.2.0. Do not include a leading v.
+          activate:
+            description: 'Whether to make the new version current immediately. Defaults to true. Set false to keep a tagged candidate off live traffic until promote. `activate: false` requires an existing current workflow version and returns 400 if HEAD is empty.'
+            type: boolean
+        required:
+        - historyId
+        - version
+        additionalProperties: false
+      description: 'Exactly one of `yaml` or `historyId`, plus a bare semver `version`. YAML is capped at 1 MiB. `historyId` copies the selected snapshot into a new tagged row and does not retag the source. Set `activate: false` to create a detached candidate that does not move live HEAD; that path requires an existing current version.'
     AutomationSummary:
       type: object
       properties:
@@ -605,6 +1101,16 @@ components:
         implementationAvailable:
           description: False when the automations registry row exists but the workflow/agent implementation row is missing.
           type: boolean
+        folderId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Workflow folder id. Null for unfiled workflows, agent automations, and orphan registry rows.
+        folderPath:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Slash-separated workflow folder path from the tenant root, such as `billing/invoices`. Null at root and for agent automations.
         createdAt:
           anyOf:
           - type: string
@@ -618,27 +1124,96 @@ components:
       - type
       - slug
       - name
+      - folderId
+      - folderPath
       - createdAt
       additionalProperties: false
-    ApiErrorEnvelope:
+    AutomationTriggerState:
       type: object
       properties:
-        issues:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApiErrorIssue'
-        requestId:
-          type: string
-          description: Request id echoed via the x-request-id header
-        hint:
-          description: Suggested fix for known error patterns
-          type: string
-        docsUrl:
-          description: Link to relevant docs
-          type: string
+        api:
+          type: boolean
+        email:
+          type: boolean
+        manual:
+          type: boolean
+        cron:
+          type: boolean
       required:
-      - issues
-      - requestId
+      - api
+      - email
+      - manual
+      - cron
+      additionalProperties: false
+    AutomationDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Implementation id for the automation. Workflow automations use workflow ids; agent automations use agent workflow ids.
+        type:
+          $ref: '#/components/schemas/AutomationType'
+        slug:
+          type: string
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+        status:
+          type: string
+        version:
+          anyOf:
+          - type: string
+          - type: 'null'
+        triggers:
+          $ref: '#/components/schemas/AutomationTriggerState'
+        implementationAvailable:
+          description: False when the automations registry row exists but the workflow/agent implementation row is missing.
+          type: boolean
+        folderId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Workflow folder id. Null for unfiled workflows, agent automations, and orphan registry rows.
+        folderPath:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Slash-separated workflow folder path from the tenant root, such as `billing/invoices`. Null at root and for agent automations.
+        createdAt:
+          anyOf:
+          - type: string
+          - type: string
+        updatedAt:
+          anyOf:
+          - type: string
+          - type: string
+        inputSchema:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+        outputSchema:
+          anyOf:
+          - type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+          - type: 'null'
+      required:
+      - id
+      - type
+      - slug
+      - name
+      - folderId
+      - folderPath
+      - createdAt
       additionalProperties: false
     ListAutomationVersionsResponse:
       type: object
@@ -665,46 +1240,74 @@ components:
       - limit
       - offset
       additionalProperties: false
-    AutomationTriggerState:
+    ListAutomationsResponse:
       type: object
       properties:
-        api:
-          type: boolean
-        email:
-          type: boolean
-        manual:
-          type: boolean
-        cron:
-          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AutomationSummary'
+        total:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        limit:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        offset:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
       required:
-      - api
-      - email
-      - manual
-      - cron
+      - data
+      - total
+      - limit
+      - offset
       additionalProperties: false
-    ApiErrorIssue:
+    DeleteAutomationResponse:
       type: object
       properties:
-        field:
+        deleted:
+          type: boolean
+          const: true
+        id:
           type: string
-          description: JSON path of the offending field, or "<root>"
-        message:
-          type: string
-          description: Human-readable error message
-        code:
-          type: string
-          description: Machine-readable error code (e.g. invalid_value, not_found, api_trigger_disabled, manual_trigger_disabled)
-        severity:
-          type: string
-          enum:
-          - error
-          - warning
-          description: Issue severity
       required:
-      - field
-      - message
-      - code
-      - severity
+      - deleted
+      - id
+      additionalProperties: false
+    UpdateAutomationRequest:
+      type: object
+      properties:
+        folderId:
+          description: Move a YAML workflow into this workflow folder. `null` files it at the tenant root. Ignored for the folder lookup when `folderPath` is also sent, but a string value is still validated before the path is applied.
+          anyOf:
+          - type: string
+          - type: 'null'
+        folderPath:
+          description: Slash-separated workflow folder path. Missing folders are created. Empty or `/` means root. When both fields are sent, `folderPath` wins after `folderId` validation.
+          type: string
+    RestoreAutomationVersionRequest:
+      type: object
+      properties:
+        message:
+          description: Optional restore commit message. Defaults to a timestamped restore note.
+          type: string
+      description: Optional JSON body. Send `{}` when no message is needed. Restore always creates a new untagged current snapshot; it does not retag the source version.
+    AutomationTriggersResponse:
+      type: object
+      properties:
+        automationId:
+          type: string
+        type:
+          $ref: '#/components/schemas/AutomationType'
+        triggers:
+          $ref: '#/components/schemas/AutomationTriggerState'
+      required:
+      - automationId
+      - type
+      - triggers
       additionalProperties: false
   securitySchemes:
     bearerAuth:
