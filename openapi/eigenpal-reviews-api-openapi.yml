@@ -1503,3 +1503,9 @@ components:
       type: http
       scheme: bearer
       description: 'API key issued from Settings → API Keys. Pass as `Authorization: Bearer <key>`.'
+x-provenance:
+  method: harvested
+  publisher: Eigenpal
+  source: https://docs.eigenpal.com/api-reference/openapi.json
+  note: split by refine-openapis from the provider's own published document, verified by fetch (openapi/_original/*.fetch.json);
+    stamped by stamp-openapi-provenance.py (roadmap#793)
