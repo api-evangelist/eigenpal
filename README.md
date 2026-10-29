@@ -64,6 +64,132 @@
 > Full detail: **[Where this data comes from](https://apievangelist.com/about/where-our-data-comes-from)**
 <!-- API-EVANGELIST-PROVENANCE:END -->
 
-Eigenpal is a company surfaced as a portfolio company of y-combinator and added to the API Evangelist network as a stub for enrichment. This profile is a lead awaiting the enrichment pipeline.
+EigenPal is an AI document-automation platform that replaces manual document reading and data entry for enterprises. Teams build directed graphs of typed steps (workflows) or Git-backed agents that parse, extract, classify, transform, and route data from messy scans, handwritten forms, invoices, KYC documents, claims, shipping forms, contracts, and receipts. Workflows are authored as plain files, evaluated against datasets with automated scoring before going live, and deployed on-prem or in the cloud. A public REST API, TypeScript and Python SDKs, and a CLI let developers start and monitor runs, manage files and datasets, collect human reviews, run evaluation experiments, and receive signed run-lifecycle webhooks.
 
-Backed by: y-combinator
+**Areas:** Company · Document Processing · Artificial Intelligence · Workflow Automation · Machine Learning · Data Extraction · OCR · Developer Tools · Enterprise
+
+## Eigenpal on APIs.io
+
+Everything profiled for Eigenpal is published on APIs.io rather than in this repository. Start at the provider page — **[apis.io/providers/eigenpal/](https://apis.io/providers/eigenpal/)** — or go straight to one of the APIs or properties below.
+
+### APIs (6)
+
+- [Eigenpal Automations API](https://apis.io/apis/eigenpal/eigenpal-automations-api/) — Inspect runnable workflow and agent automations, their versions, triggers, and source sync state.
+- [Eigenpal Evaluation API](https://apis.io/apis/eigenpal/eigenpal-evaluation-api/) — Manage datasets, examples, evaluators, experiment batches, evaluator scores, and run promotion workflows.
+- [Eigenpal Files API](https://apis.io/apis/eigenpal/eigenpal-files-api/) — Upload reusable files for later run or dataset use.
+- [Eigenpal Metadata API](https://apis.io/apis/eigenpal/eigenpal-metadata-api/) — Authenticate and inspect the current API context.
+- [Eigenpal Reviews API](https://apis.io/apis/eigenpal/eigenpal-reviews-api/) — Record human review verdicts, manage corrected outputs, and monitor review health.
+- [Eigenpal Runs API](https://apis.io/apis/eigenpal/eigenpal-runs-api/) — Start, monitor, retry, review, and debug automation runs, including artifacts.
+
+### Published properties
+
+Each property below is a page on APIs.io carrying the machine-readable artifact and what it says.
+
+#### AsyncAPI (1)
+
+Event-driven and webhook contracts.
+
+- [Eigenpal Webhooks](https://apis.io/asyncapis/eigenpal/eigenpal-webhooks/)
+
+#### MCP servers (1)
+
+Model Context Protocol servers that expose the API to agents.
+
+- [eigenpal](https://apis.io/servers/eigenpal/eigenpal/)
+
+#### Agentic access (1)
+
+Which operations an agent can call, which act, and which need a human in the loop.
+
+- [Eigenpal Agentic Access](https://apis.io/agentic-access/eigenpal/eigenpal-agentic-access/)
+
+#### Collections (5)
+
+Postman and Open Collection request collections.
+
+- [Eigenpal Automations API](https://apis.io/collections/eigenpal/open-eigenpal-automations-api/)
+- [Eigenpal Automations Evaluation API](https://apis.io/collections/eigenpal/open-eigenpal-evaluation-api/)
+- [Eigenpal Automations Files API](https://apis.io/collections/eigenpal/open-eigenpal-files-api/)
+- [Eigenpal Automations Metadata API](https://apis.io/collections/eigenpal/open-eigenpal-metadata-api/)
+- [Eigenpal Automations Runs API](https://apis.io/collections/eigenpal/open-eigenpal-runs-api/)
+
+#### Overlays (1)
+
+OpenAPI overlays, including conversational phrasing for each operation.
+
+- [Eigenpal Openapi Overlay](https://apis.io/overlays/eigenpal/eigenpal-openapi-overlay/)
+
+#### Security (2)
+
+Authentication, trust centre, and vulnerability disclosure.
+
+- [Eigenpal Authentication](https://apis.io/security/eigenpal/eigenpal-authentication/)
+- [Eigenpal Domain Security](https://apis.io/security/eigenpal/eigenpal-domain-security/)
+
+## Where to find this API
+
+Links to the company's own pages. This repository publishes no copy of their specifications — the canonical document is theirs and lives at the URLs below.
+
+- [Website](https://www.eigenpal.com/)
+- [Documentation](https://docs.eigenpal.com/)
+- [Getting started](https://docs.eigenpal.com/guides/first-workflow)
+- [API reference](https://docs.eigenpal.com/api-reference)
+- [Changelog](https://docs.eigenpal.com/changelog)
+- [Blog](https://www.eigenpal.com/blog)
+- [GitHub](https://github.com/eigenpal)
+- [Status](https://status.eigenpal.com)
+
+## API Evangelist rating
+
+**Kin Score 40.5** — developing · rubric 0.25.0 · scored 2026-10-23
+
+| Facet | Score |
+|---|---|
+| Discoverability | 73.2 |
+| Contract quality | 60.5 |
+| Contract governance | 4.5 |
+| Operational transparency | 34.2 |
+| Developer ergonomics | 68.5 |
+| Access clarity | 0.0 |
+
+**Agent readiness 45.3** — agent-native
+
+| Agent-readiness dimension | Result |
+|---|---|
+| Spec Presence | yes |
+| Agentic Access | derived (partial credit) |
+| Reversibility Documented | documented (partial credit) |
+| MCP Server | — |
+| Auth Clarity | bearer (partial credit) |
+| Idempotency | verified |
+| Error Semantics | verified |
+| OpenAPI Examples | partial |
+| Rate Limit Signal | verified |
+| Event Surface Described | yes |
+| Agent Skills | derived (partial credit) |
+| Well Known Catalog | — |
+| Consent Identity | — |
+| Agent Card | — |
+| Dry Run Mode | — |
+| Delegated Identity | — |
+| Protected Resource Metadata | — |
+| Dynamic Client Registration | — |
+| Agentic Commerce | — |
+| Pagination Ratio | partial |
+| Operation Distinctiveness | distinct |
+
+**Regulatory alignment 15.5** — Horizontal (data, software, accessibility, platform)
+
+The rubric is published at [github.com/api-evangelist/kin-score](https://github.com/api-evangelist/kin-score). The per-check breakdown behind these numbers — which checks were earned, partial or missed — along with score history and how this provider compares to its peers, is available at [apis.io/providers/eigenpal/](https://apis.io/providers/eigenpal/).
+
+## How this profile is made
+
+API Evangelist profiles a company's public API surface the way a developer would find it: the website, developer portal and documentation, the specifications it publishes, its public repositories, and its pricing, status and changelog pages. From that it derives the properties above — contracts split per API, workflows, schemas, collections, governance rules, plans and rate limits — and scores them against the published [Kin Score rubric](https://github.com/api-evangelist/kin-score).
+
+The artifacts are published on [APIs.io](https://apis.io), not in this repository. This repository is the public record for Eigenpal: the place to say something is wrong, missing or out of date, and to ask for a re-score or a removal.
+
+## Open an issue
+
+- **Something about this listing** — a wrong description, a missing API, a stale artifact or a question about the rating: [open an issue on this repository](https://github.com/api-evangelist/eigenpal/issues/new).
+- **A new API, or one that is not in the catalog yet** — [submit it on APIs.io](https://apis.io/add/).
+- **Anything else** — [the APIs.io inbox](https://github.com/api-search/inbox/issues/new) or [info@apievangelist.com](mailto:info@apievangelist.com).
